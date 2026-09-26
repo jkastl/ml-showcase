@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ML Showcase</title>
+  <meta name="description" content="Machine learning, step by step, on simulated clinical problems. Four models trained live in your browser.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23121212'/%3E%3Cpath d='M3 18h7l3-9 4 16 3-10 2 3h7' fill='none' stroke='%237aa7ff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#/">
+        <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><path d="M3 18h7l3-9 4 16 3-10 2 3h7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>ML Showcase</span>
+      </a>
+      <nav class="topnav" aria-label="Chapters">
+        <a href="#/risk/1" data-view="risk"><span class="n">1</span>Risk</a>
+        <a href="#/triage/1" data-view="triage"><span class="n">2</span>Triage</a>
+        <a href="#/subgroups/1" data-view="subgroups"><span class="n">3</span>Subgroups</a>
+        <a href="#/ecg/1" data-view="ecg"><span class="n">4</span>ECG</a>
+        <a href="#/responsible" data-view="responsible"><span class="n">5</span>Before deploying</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- ================================================================ HOME -->
+    <section class="view" data-view="home" data-short="Home">
+      <div class="hero">
+        <p class="kicker">Machine learning, step by step</p>
+        <h1>Watch a model learn, then try to break it.</h1>
+        <p>Four clinical problems, four different techniques. Every model here is trained live in your
+          browser, one step at a time, and every step has something to drag, click or switch.</p>
+      </div>
+      <ul class="cards">
+        <li class="card">
+          <p class="kicker">Chapter 1 · Logistic regression</p>
+          <h2><a href="#/risk/1">Predicting diabetes risk</a></h2>
+          <p>Fit a risk score by hand, watch gradient descent do it better, choose a clinical threshold, then
+            see what happens at another hospital.</p>
+          <p class="tech">Supervised · loss · gradient descent · ROC · calibration</p>
+        </li>
+        <li class="card">
+          <p class="kicker">Chapter 2 · Decision tree</p>
+          <h2><a href="#/triage/1">Sepsis triage rules</a></h2>
+          <p>Learn a qSOFA-style rule from vital signs one yes/no question at a time, and find the point
+            where more questions make it worse.</p>
+          <p class="tech">Gini impurity · greedy splits · overfitting · interpretability</p>
+        </li>
+        <li class="card">
+          <p class="kicker">Chapter 3 · k-means clustering</p>
+          <h2><a href="#/subgroups/1">Finding diabetes subgroups</a></h2>
+          <p>No labels this time. Drop cluster centers, step through the algorithm, pick the number of groups,
+            and see why units matter.</p>
+          <p class="tech">Unsupervised · inertia · elbow · silhouette · scaling</p>
+        </li>
+        <li class="card">
+          <p class="kicker">Chapter 4 · Neural network</p>
+          <h2><a href="#/ecg/1">Reading heartbeats</a></h2>
+          <p>Turn an ECG beat into numbers, design a neuron by drawing it, train a network, then draw beats to
+            fool it.</p>
+          <p class="tech">Neurons · backpropagation · validation · saliency</p>
+        </li>
+        <li class="card">
+          <p class="kicker">Wrap-up</p>
+          <h2><a href="#/responsible">Before it touches a patient</a></h2>
+          <p>What each chapter shows about validating, deploying and monitoring clinical models.</p>
+          <p class="tech">External validation · fairness · drift · reporting</p>
+        </li>
+      </ul>
+      <p class="disclaimer">Every patient on this site is simulated with a few lines of code. Nothing is sent
+        anywhere: the data, the training and the predictions all run inside this page. It's a teaching tool, not
+        a clinical one.</p>
+    </section>
+
+    <!-- ================================================================ CHAPTER 1: RISK -->
+    <section class="view chapter" data-view="risk" data-short="Diabetes risk" data-next="triage" hidden>
+      <header class="chapter-head">
+        <p class="kicker">Chapter 1 · Logistic regression</p>
+        <h1>Predicting diabetes risk</h1>
+        <p class="lede">A clinic wants to find adults at high risk of type 2 diabetes so it can offer a prevention
+          program. We'll build the model it would use, one step at a time.</p>
+      </header>
+      <nav class="stepper" aria-label="Steps"></nav>
+
+      <div class="step" data-name="Meet the data">
+        <div class="step-grid">
+          <div class="prose">
+            <h2>Learning from labeled examples</h2>
+            <p>Each dot is a simulated adult without diabetes who had a glucose tolerance test: their 2-hour
+              glucose across, their BMI up. <strong>Orange</strong> patients were diagnosed with type 2 diabetes
+              within five years; <strong>blue</strong> ones weren't.</p>
+            <p>That known outcome is the <strong>label</strong>. Supervised learning looks for a rule that maps
+              the features to the label and still works on patients it has never seen.</p>
+            <p>We've also locked away <strong>150 more patients</strong> for testing. The model never learns
+              from them; we'll use them in step 4 to see how it really does.</p>
+            <div class="try"><b>Try it</b>Hover a dot to see that patient. Then pick an outcome and click the
+              chart to add patients of your own. They join the training data for the next steps, so you can
+              try to confuse the model.</div>
+          </div>
+          <div class="stage">
+            <div class="panel">
+              <p class="panel-title">Training patients</p>
+              <div class="legend"><span><i class="sw" style="background:var(--s1)"></i>No diabetes at 5 years</span><span><i class="sw" style="background:var(--s2)"></i>Developed type 2 diabetes</span></div>
+              <div id="lr-data"></div>
+              <div class="controls" style="margin-top:.6rem">
+                <span class="panel-sub" style="margin:0">Click to add:</span>
+                <div class="seg" id="lr-add" role="group" aria-label="Outcome for added patients">
+                  <button data-v="1" aria-pressed="true"><i class="sw" style="background:var(--s2)"></i>Developed diabetes</button>
+                  <button data-v="0" aria-pressed="false"><i class="sw" style="background:var(--s1)"></i>Didn't</button>
+                </div>
+                <button class="btn ghost" id="lr-reset-data">Reset data</button>
+              </div>
+            </div>
+            <div class="stats">
+              <div class="stat"><span class="stat-label">Training patients</span><span class="stat-value" id="lr-n">–</span></div>
+              <div class="stat"><span class="stat-label">Developed diabetes</span><span class="stat-value" id="lr-prev">–</span></div>
+              <div class="stat"><span class="stat-label">Rate, glucose &lt; 140</span><span class="stat-value" id="lr-norm-rate">–</span><span class="stat-note">normal tolerance</span></div>
+              <div class="stat"><span class="stat-label">Rate, glucose ≥ 140</span><span class="stat-value" id="lr-igt-rate">–</span><span class="stat-note">impaired tolerance</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" data-name="Fit it by hand">
+        <div class="step-grid">
+          <div class="prose">
+            <h2>A risk score you can build with sliders</h2>
+            <p>Logistic regression is the workhorse behind many clinical risk calculators. It multiplies each
+              feature by a <strong>weight</strong>, adds a <strong>baseline</strong>, and gets a score
+              <em>z</em>. Then the <strong>sigmoid</strong> squashes <em>z</em> into a probability between 0 and 1.</p>
+            <p>Features are standardized first (measured in standard deviations from the average), so the two
+              weights are directly comparable.</p>
+            <p>The shading is the predicted risk. The line is where the model says 50%.</p>
+            <p><strong>Log loss</strong> grades the predictions: for each patient, −log of the probability the
+              model gave to what actually happened. Confidently wrong costs a lot. Confidently right costs almost
+              nothing.</p>
+            <div class="try"><b>Try it</b>Move the sliders to get the log loss as low as you can. Hover a patient
+              to see their score worked out. Getting under 0.50 is good going.</div>
+          </div>
+          <div class="stage">
+            <div class="panel">
+              <div class="legend"><span><i class="sw" style="background:var(--s1)"></i>No diabetes</span><span><i class="sw" style="background:var(--s2)"></i>Developed diabetes</span><span><i class="sw line" style="background:var(--ink)"></i>50% risk line</span></div>
+              <div id="lr-fit"></div>
+            </div>
+            <div class="row wide-left">
+              <div class="panel">
+                <div class="ctls">
+                  <label class="ctl"><span>Weight on glucose</span><output for="lr-w1"></output><input id="lr-w1" type="range" min="-4" max="4" step="0.05" value="0"></label>
+                  <label class="ctl"><span>Weight on BMI</span><output for="lr-w2"></output><input id="lr-w2" type="range" min="-4" max="4" step="0.05" value="0"></label>
+                  <label class="ctl"><span>Baseline</span><output for="lr-b"></output><input id="lr-b" type="range" min="-4" max="4" step="0.05" value="0"></label>
+                </div>
+                <div class="stats" style="margin-top:.8rem">
+                  <div class="stat"><span class="stat-label">Log loss</span><span class="stat-value" id="lr-loss2">–</span></div>
+                  <div class="stat"><span class="stat-label">Your best</span><span class="stat-value" id="lr-best2">–</span></div>
+                  <div class="stat"><span class="stat-label">Accuracy at 50%</span><span class="stat-value" id="lr-acc2">–</span></div>
+                </div>
+              </div>
+              <div class="panel">
+                <p class="panel-title">The sigmoid</p>
+                <p class="panel-sub">Every patient placed by their score <em>z</em></p>
+                <div id="lr-sig"></div>
+                <div class="formula" id="lr-formula" aria-live="polite">Hover a patient to see their score.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" data-name="Gradient descent">
+        <div class="step-grid">
+          <div class="prose">
+            <h2>Let the computer turn the knobs</h2>
+            <p>Sliders don't scale to 30 features. <strong>Gradient descent</strong> does it automatically: work
+              out which way each weight should move to lower the loss (the <strong>gradient</strong>), take a small
+              step that way, and repeat.</p>
+            <p>The map shows the log loss for every pair of weights, with the baseline held at its current value.
+              Stronger blue is lower. Training is a ball rolling downhill.</p>
+            <p>The <strong>learning rate</strong> is the step size. Too small and it crawls. Too large and it
+              overshoots, bouncing across the valley or flying out of it.</p>
+            <p>It starts from wherever you left the sliders in step 2.</p>
+            <div class="try"><b>Try it</b>Press Train. Then click anywhere on the loss map to restart from there,
+              and try a learning rate above 6.</div>
+          </div>
+          <div class="stage">
+            <div class="row">
+              <div class="panel">
+                <p class="panel-title">Model</p>
+                <p class="panel-sub">Shading and 50% line update as it learns</p>
+                <div id="lr-gd"></div>
+              </div>
+              <div class="panel">
+                <p class="panel-title">Loss landscape</p>
+                <p class="panel-sub">Click to move the starting point</p>
+                <div id="lr-land"></div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="controls">
+                <button class="btn primary" id="lr-train">Train</button>
+                <button class="btn" id="lr-step">One step</button>
+                <button class="btn ghost" id="lr-reset-gd">Back to my weights</button>
+              </div>
+              <div class="row" style="margin-top:.8rem; align-items:end">
+                <label class="ctl"><span>Learning rate</span><output for="lr-rate"></output><input id="lr-rate" type="range" min="-2" max="1.2" step="0.01" value="-0.3"></label>
+                <div class="stats">
+                  <div class="stat"><span class="stat-label">Steps</span><span class="stat-value" id="lr-iter">0</span></div>
+                  <div class="stat"><span class="stat-label">Log loss</span><span class="stat-value" id="lr-loss3">–</span></div>
+                </div>
+              </div>
+              <div class="formula" id="lr-grad" style="margin-top:.8rem"></div>
+            </div>
+            <div class="panel">
+              <p class="panel-title">Log loss over training steps</p>
+              <div id="lr-curve"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" data-name="Pick a threshold">
+        <div class="step-grid">
+          <div class="prose">
+            <h2>From probability to decision</h2>
+            <p>The model gives a probability. The clinic needs a yes or no: offer the program or not. Where to
+              draw that line is a clinical judgment, not a math one.</p>
+            <p>These are the <strong>150 held-out patients</strong>, scored by the fully trained model. Patients who
+              developed diabetes stack above the axis; those who didn't hang below. Everyone right of the
+              threshold gets flagged.</p>
+            <ul>
+              <li><strong>Sensitivity</strong>: of those who developed diabetes, the share we flagged.</li>
+              <li><strong>Specificity</strong>: of those who didn't, the share we left alone.</li>
+              <li><strong>PPV</strong>: of those flagged, the share who really developed it.</li>
+            </ul>
+            <p>The <strong>ROC curve</strong> traces every threshold at once. The area under it (AUC) is the
+              chance the model ranks a random future case above a random non-case.</p>
+            <div class="try"><b>Try it</b>Drag the threshold, or pick a preset. Then decide how many unnecessary
+              referrals one missed case is worth and let decision theory pick the threshold.</div>
+          </div>
+          <div class="stage">
+            <div class="panel">
+              <p class="panel-title">Predicted risk, held-out patients</p>
+              <div class="legend"><span><i class="sw sq" style="background:var(--s2)"></i>Developed diabetes (above)</span><span><i class="sw sq" style="background:var(--s1)"></i>Didn't (below)</span></div>
+              <div id="lr-hist"></div>
+              <label class="ctl" style="margin-top:.4rem"><span>Threshold</span><output for="lr-thr"></output><input id="lr-thr" type="range" min="0.01" max="0.99" step="0.01" value="0.5"></label>
+              <div class="controls" style="margin-top:.6rem">
+                <button class="btn" id="lr-p-screen">Screening (sensitivity ≥ 90%)</button>
+                <button class="btn" id="lr-p-bal">Balanced</button>
+                <button class="btn" id="lr-p-spec">Few false alarms (specificity ≥ 90%)</button>
+              </div>
+            </div>
+            <div class="row">
+              <div class="panel">
+                <p class="panel-title">Confusion matrix</p>
+                <div id="lr-cm"></div>
+                <div class="stats" style="margin-top:.7rem">
+                  <div class="stat"><span class="stat-label">Sensitivity</span><span class="stat-value" id="lr-sens">–</span></div>
+                  <div class="stat"><span class="stat-label">Specificity</span><span class="stat-value" id="lr-spec">–</span></div>
+                  <div class="stat"><span class="stat-label">PPV</span><span class="stat-value" id="lr-ppv">–</span></div>
+                  <div class="stat"><span class="stat-label">NPV</span><span class="stat-value" id="lr-npv">–</span></div>
+                </div>
+              </div>
+              <div class="panel">
+                <p class="panel-title">ROC curve · AUC <span id="lr-auc">–</span></p>
+                <div id="lr-roc"></div>
+              </div>
+            </div>
+            <div class="panel">
+              <label class="ctl"><span>One missed case is as bad as this many unneeded referrals</span><output for="lr-cost"></output><input id="lr-cost" type="range" min="0.5" max="20" step="0.5" value="4"></label>
+              <div class="controls" style="margin-top:.6rem">
+                <button class="btn primary" id="lr-usecost">Set threshold from costs</button>
+                <span class="callout" id="lr-cost-note" style="margin:0"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" data-name="A new hospital">
+        <div class="step-grid">
+          <div class="prose">
+            <h2>Same model, different patients</h2>
+            <p>The model is deployed at a second hospital. Nothing about the model changes, but the patients do.</p>
+            <p><strong>Calibration</strong> asks: when the model says 30%, do about 30% go on to develop
+              diabetes? Points on the diagonal mean yes. A risk calculator that's miscalibrated tells patients the
+              wrong number, even if it ranks them in the right order.</p>
+            <div class="try"><b>Try it</b>Make diabetes more or less common at the new hospital, or give its
+              lab a glucose assay that reads a bit high. Watch AUC hold steady while calibration and PPV slip. Then
+              recalibrate on 200 local patients.</div>
+            <p>This is why clinical models need <strong>external validation</strong> and monitoring after
+              deployment, not just a good score on the data they were built from.</p>
+          </div>
+          <div class="stage">
+            <div class="panel">
+              <div class="ctls">
+                <label class="ctl"><span>Share developing diabetes at new hospital</span><output for="lr-prevnew"></output><input id="lr-prevnew" type="range" min="0.05" max="0.6" step="0.01" value="0.3"></label>
+                <label class="ctl"><span>New lab's glucose assay bias</span><output for="lr-shift"></output><input id="lr-shift" type="range" min="-25" max="25" step="1" value="0"></label>
+              </div>
+              <div class="controls" style="margin-top:.7rem">
+                <button class="btn primary" id="lr-recal">Recalibrate on 200 local patients</button>
+                <button class="btn ghost" id="lr-sim-reset">Match the original hospital</button>
+              </div>
+            </div>
+            <div class="row wide-left">
+              <div class="panel">
+                <p class="panel-title">Calibration</p>
+                <div class="legend" id="lr-cal-legend"></div>
+                <div id="lr-cal"></div>
+              </div>
+              <div class="panel">
+                <p class="panel-title">Performance at threshold <span id="lr-cal-thr">–</span></p>
+                <table class="data">
+                  <thead><tr><th></th><th>Original</th><th>New site</th></tr></thead>
+                  <tbody id="lr-sites"></tbody>
+                </table>
+                <p class="callout" id="lr-cal-note"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================ CHAPTER 2: TRIAGE -->
+    <section class="view chapter" data-view="triage" data-short="Sepsis triage" data-next="subgroups" hidden>
+      <header class="chapter-head">
+        <p class="kicker">Chapter 2 · Decision tree</p>
+        <h1>Sepsis triage rules</h1>
+        <p class="lede">Emergency departments use short checklists like qSOFA to spot patients with infection who
+          might crash. A decision tree learns a checklist like that from data.</p>
+      </header>
+      <nav class="stepper" aria-label="Steps"></nav>
+
+      <div class="step" data-name="One question">
+        <div class="step-grid">
+          <div class="prose">
+            <h2>Split the patients in two</h2>
+            <p>These are 300 simulated emergency patients with suspected infection. Respiratory rate across,
+              systolic blood pressure up. <strong>Orange</strong> patients deteriorated within 48 hours (ICU
+              transfer or death).</p>
+            <p>A tree asks one yes/no question about one feature, then splits. A good question leaves each side
+              <strong>purer</strong>: closer to all orange or all blue.</p>
+            <p><strong>Gini impurity</strong> measures the mix. It's 0 when a group is all one outcome and 0.5 at a
+              50/50 split. We want the split with the lowest impurity, averaged over both sides and weighted by
+              their sizes.</p>
+            <div class="try"><b>Try it</b>Pick a vital sign, then drag the cut across the chart to make the impurity
+              as low as you can. The lower chart shows the impurity at every possible cut. The algorithm simply
+              tries them all.</div>
+          </div>
+          <div class="stage">
+            <div class="panel">
+              <div class="controls" style="margin-bottom:.6rem">
+                <div class="seg" id="tr-feat" role="group" aria-label="Feature to split on">
+                  <button data-v="0" aria-pressed="true">Respiratory rate</button>
+                  <button data-v="1" aria-pressed="false">Systolic BP</button>
+                </div>
+                <button class="btn" id="tr-best">Show the best cut</button>
+              </div>
+              <div class="legend"><span><i class="sw" style="background:var(--s1)"></i>Stable</span><span><i class="sw" style="background:var(--s2)"></i>Deteriorated</span></div>
+              <div id="tr-split"></div>
+            </div>
+            <div class="row">
+              <div class="panel">
+                <p class="panel-title">The two sides</p>
+                <div id="tr-sides"></div>
+              </div>
+              <div class="panel">
+                <p class="panel-title">Impurity after the cut</p>
+                <p class="panel-sub">Weighted Gini at every threshold · drag here too</p>
+                <div id="tr-imp"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" data-name="Grow a tree">
+        <div class="step-grid">
+          <div class="prose">
+            <h2>Then ask again, and again</h2>
+            <p>After the first split, the tree repeats the same search inside each half, then inside those halves.
+              This is <strong>greedy</strong>: every split is the best one available right now, with no
+              look-ahead.</p>
+            <p>Each shaded box on the chart is a <strong>leaf</strong>: patients who gave the same answers to
+              every question. A leaf's predicted risk is just the share of its patients who deteriorated. Darker
+              orange means higher risk.</p>
+            <div class="try"><b>Try it</b>Press Split to add one question at a time; the tree picks the split
+              that removes the most impurity anywhere. Click a node in the diagram to highlight its patients.</div>
+          </div>
+          <div class="stage">
+            <div class="panel">
+              <div class="controls" style="margin-bottom:.6rem">
+                <button class="btn primary" id="tr-next">Split</button>
+                <button class="btn" id="tr-undo">Undo</button>
+                <button class="btn" id="tr-full">Grow to depth 4</button>
+                <button class="btn ghost" id="tr-reset">Start over</button>
+                <span class="callout" id="tr-grow-info" style="margin:0"></span>
+              </div>
+              <div id="tr-grow"></div>
+            </div>
+            <div class="panel">
+              <p class="panel-title">The tree</p>
+              <p class="panel-sub">Each node: the question it asks, how many patients reach it, and their deterioration rate</p>
+              <div class="tree-wrap" id="tr-diagram"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" data-name="Too many questions">
+        <div class="step-grid">
+          <div class="prose">
+            <h2>Memorizing isn't learning</h2>
+            <p>Keep splitting and the tree eventually walls off tiny boxes around single patients. It has
+              memorized the training set, noise included, and gets <em>worse</em> on patients it hasn't seen.
+              That's <strong>overfitting</strong>.</p>
+            <p>The chart compares AUC on the 300 training patients and on <strong>120 held-out patients</strong>
+              as the tree gets deeper. Training AUC only goes up. Held-out AUC peaks and then falls. The gap is
+              the overfitting.</p>
+            <p><strong>Minimum leaf size</strong> is a guardrail: no leaf may hold fewer patients than this.</p>
+            <div class="try"><b>Try it</b>Push the depth up and the minimum leaf size down, and watch the boxes
+              shatter. Then find the settings where held-out AUC peaks. That's the tree you'd keep.</div>
+          </div>
+          <div class="stage">
+            <div class="panel">
+              <div class="ctls">
+                <label class="ctl"><span>Maximum depth</span><output for="tr-depth"></output><input id="tr-depth" type="range" min="1" max="12" step="1" value="3"></label>
+                <label class="ctl"><span>Minimum patients per leaf</span><output for="tr-minleaf"></output><input id="tr-minleaf" type="range" min="1" max="40" step="1" value="5"></label>
+              </div>
+              <div class="stats" style="margin-top:.8rem">
+                <div class="stat"><span class="stat-label">Leaves</span><span class="stat-value" id="tr-leaves">–</span></div>
+                <div class="stat"><span class="stat-label">Training AUC</span><span class="stat-value" id="tr-auc-train">–</span></div>
+                <div class="stat"><span class="stat-label">Held-out AUC</span><span class="stat-value" id="tr-auc-test">–</span></div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="panel">
+                <p class="panel-title">Leaves on the training data</p>
+                <div id="tr-over"></div>
+              </div>
+              <div class="panel">
+                <p class="panel-title">AUC by depth</p>
+                <div class="legend"><span><i class="sw line" style="background:var(--s1)"></i>Training</span><span><i class="sw line" style="background:var(--s2)"></i>Held out</span></div>
+                <div id="tr-auc"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" data-name="Follow one patient">
+        <div class="step-grid">
+          <div class="prose">
+            <h2>Why was this patient flagged?</h2>
+            <p>A shallow tree can be read like a protocol. That's a big part of why rules like this show up in
+              clinical decision support: a clinician can see exactly why the alert fired and judge whether it
+              makes sense.</p>
+            <p>Here's a depth-3 tree trained on all 300 patients. It found its own cutoffs, which you can compare
+              with the ones in <strong>qSOFA</strong>: respiratory rate ≥ 22 and systolic BP ≤ 100 (qSOFA also
+              uses altered mental status, which isn't in this data).</p>
+            <div class="try"><b>Try it</b>Drag the patient (the ringed dot) around the chart, or use the sliders.
+              Watch their path through the tree and the rule that fires. Switch on the qSOFA cutoffs to compare.</div>
+          </div>
+          <div class="stage">
+            <div class="row wide-left">
+              <div class="panel">
+                <div id="tr-trace"></div>
+                <label class="check" style="margin-top:.5rem"><input type="checkbox" id="tr-qsofa"> Show qSOFA cutoffs</label>
+              </div>
+              <div class="panel">
+                <div class="ctls" style="grid-template-columns:1fr">
+                  <label class="ctl"><span>Respiratory rate</span><output for="tr-rr"></output><input id="tr-rr" type="range" min="10" max="40" step="1" value="26"></label>
+                  <label class="ctl"><span>Systolic BP</span><output for="tr-sbp"></output><input id="tr-sbp" type="range" min="70" max="180" step="1" value="96"></label>
+                </div>
+                <div id="tr-trace-out" style="margin-top:.8rem" aria-live="polite"></div>
+              </div>
+            </div>
+            <div class="panel">
+              <p class="panel-title">The tree</p>
+              <div class="tree-wrap" id="tr-diagram2"></div>
+            </div>
+            <div class="panel">
+              <p class="panel-title">The same tree as rules</p>
+              <pre class="rules" id="tr-rules"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================ CHAPTER 3: SUBGROUPS -->
+    <section class="view chapter" data-view="subgroups" data-short="Diabetes subgroups" data-next="ecg" hidden>
+      <header class="chapter-head">
+        <p class="kicker">Chapter 3 · k-means clustering</p>
+        <h1>Finding diabetes subgroups</h1>
+        <p class="lede">In 2018, a Scandinavian study clustered thousands of newly diagnosed adults and argued that
+          "type 2 diabetes" is really several subgroups with different risks. Here's the core idea, on simulated
+          patients.</p>
+      </header>
+      <nav class="stepper" aria-label="Steps"></nav>
+
+      <div class="step" data-name="Drop some centers">
+        <div class="step-grid">
+          <div class="prose">
+            <h2>No labels this time</h2>
+            <p>Each dot is a simulated patient at diabetes diagnosis: age across, HbA1c (average blood sugar over
+              ~3 months) up. There are no colors because there are no answers. <strong>Unsupervised</strong>
+              learning looks for structure on its own.</p>
+            <p><strong>k-means</strong> describes each group by a <strong>center</strong>. Every patient belongs to
+              whichever center is closest. The shading shows each center's territory.</p>
+            <p><strong>Inertia</strong> is the total squared distance from each patient to their center. Small
+              inertia means tight groups; k-means tries to make it as small as possible.</p>
+            <div class="try"><b>Try it</b>Click the chart to drop 2 to 6 centers where you think the groups are.
+              Drag them around and watch patients switch sides and the inertia change.</div>
+          </div>
+          <div class="stage">
+            <div class="panel">
+              <div class="controls" style="margin-bottom:.6rem">
+                <button class="btn" id="km-rand">Drop 4 at random</button>
+                <button class="btn" id="km-undo">Remove last</button>
+                <button class="btn ghost" id="km-clear">Clear</button>
+              </div>
+              <div id="km-place"></div>
+            </div>
+            <div class="stats">
+              <div class="stat"><span class="stat-label">Centers (k)</span><span class="stat-value" id="km-k">0</span></div>
+              <div class="stat"><span class="stat-label">Inertia</span><span class="stat-value" id="km-inertia">–</span><span class="stat-note">in standardized units</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" data-name="Let it iterate">
+        <div class="step-grid">
+          <div class="prose">
+            <h2>Assign, move, repeat</h2>
+            <p>k-means alternates two moves:</p>
+            <ul>
+              <li><strong>Assign</strong> every patient to their nearest center.</li>
+              <li><strong>Move</strong> each center to the average of its patients.</li>
+            </ul>
+            <p>Neither move can increase the inertia, so the algorithm always settles. It doesn't always settle
+              in the <em>best</em> place, though: where it ends up depends on where it starts.</p>
+            <p>It starts from the centers you dropped in step 1.</p>
+            <div class="try"><b>Try it</b>Step through Assign and Move yourself, or press Run. Then try a bad start
+              and see it get stuck. The <em>k-means++</em> start spreads the first centers apart, which is what real
+              software does.</div>
+          </div>
+          <div class="stage">
+            <div class="panel">
+              <div class="controls" style="margin-bottom:.6rem">
+                <button class="btn" id="km-assign">1 · Assign</button>
+                <button class="btn" id="km-move">2 · Move</button>
+                <button class="btn primary" id="km-run">Run</button>
+                <span class="callout" id="km-status" style="margin:0" aria-live="polite"></span>
+              </div>
+              <div class="controls" style="margin-bottom:.6rem">
+                <button class="btn ghost" id="km-restart">Back to my centers</button>
+                <button class="btn ghost" id="km-bad">Bad start</button>
+                <button class="btn ghost" id="km-pp">k-means++ start</button>
+              </div>
+              <div id="km-iter"></div>
+            </div>
+            <div class="panel">
+              <p class="panel-title">Inertia after each step</p>
+              <div id="km-inertia-chart"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" data-name="How many groups?">
+        <div class="step-grid">
+          <div class="prose">
+            <h2>Choosing k</h2>
+            <p>k-means will find exactly as many groups as you ask for, even in pure noise. Choosing <em>k</em> is
+              part of the analysis, not something the algorithm answers.</p>
+            <p>The <strong>elbow plot</strong> shows inertia for k = 1 to 8 (best of 10 runs each). It always falls
+              as k grows; look for the bend where adding a group stops helping much.</p>
+            <p>The <strong>silhouette score</strong> asks whether patients sit closer to their own group than to
+              the next nearest one. It runs from −1 to 1; higher is better.</p>
+            <p>Clusters are a hypothesis. The 2018 subgroups mattered because they went on to predict different
+              complication rates, not because an algorithm drew them.</p>
+            <div class="try"><b>Try it</b>Click a k on either chart and read the group profiles. Would a
+              clinician recognize these groups?</div>
+          </div>
+          <div class="stage">
+            <div class="row">
+              <div class="panel">
+                <p class="panel-title">Elbow: inertia by k</p>
+                <div id="km-elbow"></div>
+              </div>
+              <div class="panel">
+                <p class="panel-title">Silhouette by k</p>
+                <div id="km-sil"></div>
+              </div>
+            </div>
+            <div class="panel">
+              <p class="panel-title">k = <span id="km-ksel">4</span></p>
+              <div id="km-kview"></div>
+            </div>
+            <div class="profiles" id="km-profiles"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" data-name="Units matter">
+        <div class="step-grid">
+          <div class="prose">
+            <h2>Distance depends on units</h2>
+            <p>In this data, age spans about 60 years while HbA1c spans about 7 percentage points. Measured raw, a
+              1-year age gap counts the same as a 1-point HbA1c gap. Clinically, that's absurd: one HbA1c point is a
+              big difference in blood sugar.</p>
+            <p><strong>Standardizing</strong> measures each feature in its own standard deviations, so both get a
+              fair say. Everything in steps 1 to 3 used standardized units.</p>
+            <p>Because this data is simulated, we know the groups we built in, so we can check which version finds
+              them.</p>
+            <div class="try"><b>Try it</b>Flip between raw and standardized units. Notice the shape of the
+              territories. Then reveal the hidden groups.</div>
+          </div>
+          <div class="stage">
+            <div class="panel">
+              <div class="controls" style="margin-bottom:.6rem">
+                <div class="seg" id="km-units" role="group" aria-label="Units">
+                  <button data-v="raw" aria-pressed="true">Raw units</button>
+                  <button data-v="std" aria-pressed="false">Standardized</button>
+                </div>
+                <label class="check"><input type="checkbox" id="km-truth"> Reveal the hidden groups</label>
+              </div>
+              <div id="km-scale"></div>
+              <p class="panel-sub" id="km-scale-legend" style="margin-top:.4rem"></p>
+            </div>
+            <div class="stats">
+              <div class="stat"><span class="stat-label">Patients placed in their true group</span><span class="stat-value" id="km-agree">–</span></div>
+              <div class="stat"><span class="stat-label">Distance of 1 year of age</span><span class="stat-value" id="km-unit-age">–</span></div>
+              <div class="stat"><span class="stat-label">Distance of 1 HbA1c point</span><span class="stat-value" id="km-unit-a1c">–</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================ CHAPTER 4: ECG -->
+    <section class="view chapter" data-view="ecg" data-short="Reading heartbeats" data-next="responsible" hidden>
+      <header class="chapter-head">
+        <p class="kicker">Chapter 4 · Neural network</p>
+        <h1>Reading heartbeats</h1>
+        <p class="lede">Bedside monitors raise hundreds of alarms per patient per day, and most are false. We'll
+          train a small neural network to label single heartbeats as normal, a premature ventricular contraction
+          (PVC), or motion artifact.</p>
+      </header>
+      <nav class="stepper" aria-label="Steps"></nav>
+
+      <div class="step" data-name="A beat is numbers">
+        <div class="step-grid">
+          <div class="prose">
+            <h2>What the network actually sees</h2>
+            <p>A network doesn't see a trace. It sees numbers. Each beat window is sampled at 64 evenly spaced
+              moments, and each sample becomes one input.</p>
+            <ul>
+              <li><strong>Normal</strong>: small P wave, narrow spike (QRS), rounded T wave.</li>
+              <li><strong>PVC</strong>: no P wave, a wide, bizarre QRS, and a T wave pointing the opposite way.</li>
+              <li><strong>Artifact</strong>: the patient moved or a lead slipped. No real heartbeat shape.</li>
+            </ul>
+            <p>The strip below the trace is the same beat as the network receives it: 64 numbers, colored by
+              value.</p>
+            <div class="try"><b>Try it</b>Flip through beats of each type and hover the strip. Then lower the
+              sampling rate and see how few samples it takes before a narrow QRS disappears.</div>
+          </div>
+          <div class="stage">
+            <div class="panel">
+              <div class="controls" style="margin-bottom:.6rem">
+                <div class="seg" id="ecg-cls" role="group" aria-label="Beat type">
+                  <button data-v="0" aria-pressed="true">Normal</button>
+                  <button data-v="1" aria-pressed="false">PVC</button>
+                  <button data-v="2" aria-pressed="false">Artifact</button>
+                </div>
+                <button class="btn" id="ecg-next">Another one</button>
+              </div>
+              <div class="legend"><span><i class="sw line" style="background:var(--muted)"></i>Continuous signal</span><span><i class="sw" style="background:var(--accent)"></i>Samples</span></div>
+              <div id="ecg-wave"></div>
+              <label class="ctl" style="margin-top:.5rem"><span>Samples per beat</span><output for="ecg-res"></output><input id="ecg-res" type="range" min="6" max="64" step="1" value="64"></label>
+            </div>
+            <div class="panel">
+              <p class="panel-title">The input vector</p>
+              <p class="panel-sub">Blue below zero, red above · hover for values</p>
+              <div id="ecg-strip"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" data-name="One neuron">
+        <div class="step-grid">
+          <div class="prose">
+            <h2>A neuron is a template</h2>
+            <p>A neuron multiplies each input by a <strong>weight</strong> and adds up the results. Lay the 64
+              weights out in time and they form a <strong>template</strong>. The sum (the neuron's
+              <strong>activation</strong>) is large when the beat lines up with the template.</p>
+            <p>The middle chart shows each input times its weight. The activation is the sum of those bars.</p>
+            <p>The bottom chart runs this one neuron over 630 training beats. If the three types land in
+              separate places, the neuron has found a useful feature.</p>
+            <div class="try"><b>Try it</b>Pick a template, or <strong>draw your own weights</strong> directly on
+              the top chart. Can you design a neuron that pulls PVCs away from normal beats?</div>
+          </div>
+          <div class="stage">
+            <div class="panel">
+              <div class="controls" style="margin-bottom:.6rem">
+                <div class="seg" id="ecg-tpl" role="group" aria-label="Weight template">
+                  <button data-v="r" aria-pressed="true">Narrow QRS</button>
+                  <button data-v="p" aria-pressed="false">P wave</button>
+                  <button data-v="wide" aria-pressed="false">Wide QRS</button>
+                  <button data-v="t" aria-pressed="false">Inverted T</button>
+                  <button data-v="zero" aria-pressed="false">Blank</button>
+                </div>
+                <button class="btn" id="ecg-next2">Another beat</button>
+              </div>
+              <div class="legend"><span><i class="sw line" style="background:var(--muted)"></i>Beat (input)</span><span><i class="sw line" style="background:var(--accent)"></i>Weights (draw on me)</span></div>
+              <div id="ecg-neuron"></div>
+            </div>
+            <div class="panel">
+              <p class="panel-title">Input × weight · activation <span id="ecg-act">–</span></p>
+              <div id="ecg-prod"></div>
+            </div>
+            <div class="panel">
+              <p class="panel-title">This neuron on 630 training beats</p>
+              <div class="legend"><span><i class="sw" style="background:var(--s1)"></i>Normal</span><span><i class="sw sq" style="background:var(--s2)"></i>PVC</span><span><i class="sw" style="background:var(--s3);border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%)"></i>Artifact</span></div>
+              <div id="ecg-acts"></div>
+              <p class="callout" id="ecg-sep"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" data-name="Train a network">
+        <div class="step-grid">
+          <div class="prose">
+            <h2>Many neurons, learned together</h2>
+            <p>Our network has one <strong>hidden layer</strong> of neurons, each learning its own template, and an
+              <strong>output layer</strong> that weighs their votes into a probability for each beat type.</p>
+            <p>Training is the same gradient descent as chapter 1. The error is passed backward through both
+              layers to work out how every weight should change (<strong>backpropagation</strong>).</p>
+            <p><strong>Validation loss</strong> is measured on 270 beats the network never trains on. If it starts
+              rising while training loss keeps falling, the network is memorizing.</p>
+            <p>It trains on 1,400 simulated beats. Each <strong>epoch</strong> is one pass through all of them.</p>
+            <div class="try"><b>Try it</b>Press Train and watch the hidden neurons' templates grow out of flat lines.
+              Some lock onto the QRS or T wave; others turn jagged, which is how the network learns to recognize
+              noisy artifact. Then try 1 hidden neuron, and 24.</div>
+          </div>
+          <div class="stage">
+            <div class="panel">
+              <div class="controls">
+                <button class="btn primary" id="ecg-train">Train</button>
+                <button class="btn ghost" id="ecg-reset">Reset weights</button>
+              </div>
+              <div class="ctls" style="margin-top:.8rem">
+                <label class="ctl"><span>Hidden neurons</span><output for="ecg-hidden"></output><input id="ecg-hidden" type="range" min="1" max="24" step="1" value="8"></label>
+                <label class="ctl"><span>Learning rate</span><output for="ecg-lr"></output><input id="ecg-lr" type="range" min="-4" max="-1" step="0.1" value="-2.7"></label>
+              </div>
+              <div class="stats" style="margin-top:.8rem">
+                <div class="stat"><span class="stat-label">Epochs</span><span class="stat-value" id="ecg-epoch">0</span></div>
+                <div class="stat"><span class="stat-label">Training loss</span><span class="stat-value" id="ecg-tloss">–</span></div>
+                <div class="stat"><span class="stat-label">Validation loss</span><span class="stat-value" id="ecg-vloss">–</span></div>
+                <div class="stat"><span class="stat-label">Validation accuracy</span><span class="stat-value" id="ecg-vacc">–</span></div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="panel">
+                <p class="panel-title">Loss by epoch</p>
+                <div class="legend"><span><i class="sw line" style="background:var(--s1)"></i>Training</span><span><i class="sw line" style="background:var(--s2)"></i>Validation</span></div>
+                <div id="ecg-loss"></div>
+              </div>
+              <div class="panel">
+                <p class="panel-title">Validation confusion matrix</p>
+                <div id="ecg-cm"></div>
+              </div>
+            </div>
+            <div class="panel">
+              <p class="panel-title">Hidden neuron templates</p>
+              <p class="panel-sub">Each neuron's 64 input weights. The bars on the right are its votes for normal, PVC and artifact.</p>
+              <div class="neurons" id="ecg-neurons"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" data-name="Try to fool it">
+        <div class="step-grid">
+          <div class="prose">
+            <h2>Stress-test the model</h2>
+            <p>A model that scores well on validation can still fail on inputs unlike anything it trained on. Poke
+              at it.</p>
+            <p>The shaded bars behind the trace are a <strong>saliency map</strong>: how much the prediction
+              changes when each sample changes. It's a common sanity check that a model looks at the QRS and T
+              wave rather than, say, the baseline.</p>
+            <div class="try"><b>Try it</b>Load an example and distort it, or draw a beat from scratch on the chart.</div>
+            <ul>
+              <li><strong>Widen the QRS</strong> on a normal beat. To a clinician that's a warning sign. Does the network
+                care? PVCs in its training data also lack a P wave and have a flipped T wave, so it may have learned
+                those shortcuts instead.</li>
+              <li><strong>Add baseline wander</strong>, which is common and harmless. Does a normal beat start
+                reading as artifact?</li>
+              <li><strong>Try a flat line.</strong> It isn't any of the three classes, but the network has to pick
+                one anyway. It has no way to say "I don't know."</li>
+            </ul>
+            <p class="callout" id="ecg-model-note"></p>
+          </div>
+          <div class="stage">
+            <div class="panel">
+              <div class="controls" style="margin-bottom:.6rem">
+                <div class="seg" id="ecg-ex" role="group" aria-label="Starting example">
+                  <button data-v="0" aria-pressed="true">Normal</button>
+                  <button data-v="1" aria-pressed="false">PVC</button>
+                  <button data-v="2" aria-pressed="false">Artifact</button>
+                  <button data-v="flat" aria-pressed="false">Flat line</button>
+                </div>
+                <label class="check"><input type="checkbox" id="ecg-sal" checked> Saliency</label>
+              </div>
+              <div id="ecg-draw"></div>
+              <p class="panel-sub" style="margin:.4rem 0 0">Drag on the chart to draw.</p>
+            </div>
+            <div class="row">
+              <div class="panel">
+                <div class="ctls" style="grid-template-columns:1fr">
+                  <label class="ctl"><span>QRS width</span><output for="ecg-qrs"></output><input id="ecg-qrs" type="range" min="0.5" max="4" step="0.1" value="1"></label>
+                  <label class="ctl"><span>Noise</span><output for="ecg-noise"></output><input id="ecg-noise" type="range" min="0" max="0.4" step="0.01" value="0"></label>
+                  <label class="ctl"><span>Baseline wander</span><output for="ecg-wander"></output><input id="ecg-wander" type="range" min="0" max="1" step="0.02" value="0"></label>
+                </div>
+              </div>
+              <div class="panel">
+                <p class="panel-title">Network says</p>
+                <div class="pbars" id="ecg-probs" aria-live="polite"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================ RESPONSIBLE -->
+    <section class="view" data-view="responsible" data-short="Before deploying" hidden>
+      <header class="chapter-head">
+        <p class="kicker">Wrap-up</p>
+        <h1>Before it touches a patient</h1>
+        <p class="lede">Every chapter hid a lesson about clinical deployment. A model that trains well is the
+          beginning of the work, not the end.</p>
+      </header>
+      <ul class="checklist">
+        <li>
+          <h3>Test on patients the model never saw</h3>
+          Held-out data catches overfitting; data from another hospital, era or device catches much more. A
+          deep tree looked perfect on its training data and got worse on new patients.
+          <p class="where"><a href="#/triage/3">Chapter 2 · Too many questions</a></p>
+        </li>
+        <li>
+          <h3>Check calibration, not just AUC</h3>
+          At the new hospital, AUC didn't move while every predicted risk was wrong. Patients and clinicians act
+          on the number, so the number has to be right.
+          <p class="where"><a href="#/risk/5">Chapter 1 · A new hospital</a></p>
+        </li>
+        <li>
+          <h3>Choose thresholds with the people who live with them</h3>
+          Sensitivity, alert burden and missed cases trade off against each other. The right threshold depends on
+          what a false alarm and a miss actually cost, which is a clinical and ethical call.
+          <p class="where"><a href="#/risk/4">Chapter 1 · Pick a threshold</a></p>
+        </li>
+        <li>
+          <h3>Look inside subgroups</h3>
+          A model can be accurate overall and poor for a particular age group, sex, ethnicity or site, especially
+          if that group was rare in training. Report performance for each one.
+          <p class="where"><a href="#/risk/1">Chapter 1 · Meet the data</a></p>
+        </li>
+        <li>
+          <h3>Watch for leakage</h3>
+          Features that quietly encode the answer (a test clinicians only order when they already suspect the
+          diagnosis) make a model look brilliant in development and useless in practice.
+        </li>
+        <li>
+          <h3>Prefer simple when simple is as good</h3>
+          A three-question tree that clinicians can read and challenge often beats a slightly more accurate model
+          nobody can explain. When you do use a complex model, check what it's looking at.
+          <p class="where"><a href="#/triage/4">Chapter 2</a> · <a href="#/ecg/4">Chapter 4 · Saliency</a></p>
+        </li>
+        <li>
+          <h3>Treat clusters as hypotheses</h3>
+          Clustering always returns groups, and the groups depend on units, starting points and k. They mean
+          something only once they predict outcomes or replicate elsewhere.
+          <p class="where"><a href="#/subgroups/4">Chapter 3 · Units matter</a></p>
+        </li>
+        <li>
+          <h3>Monitor after launch</h3>
+          Populations, lab assays, devices and practice all drift. Track calibration and alert rates over time,
+          and have a plan for when they slip.
+        </li>
+        <li>
+          <h3>Report it so others can check</h3>
+          Reporting guidelines like TRIPOD+AI set out what a prediction-model paper should describe. Software that
+          informs diagnosis or treatment may also be regulated as a medical device.
+        </li>
+      </ul>
+      <div class="step-foot">
+        <a class="btn ghost" href="#/ecg/4">← Chapter 4</a>
+        <a class="btn primary" href="#/">Back to the start</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site">
+    Simulated data only. Runs entirely in your browser. Not for clinical use.
+    · <a href="https://github.com/jkastl/ml-showcase">Source</a> · v1.0.0 · 2026-09-26
+  </footer>
+
+  <script src="js/core.js"></script>
+  <script src="js/risk.js"></script>
+  <script src="js/triage.js"></script>
+  <script src="js/subgroups.js"></script>
+  <script src="js/ecg.js"></script>
+  <script>ML.start(); ML.route();</script>
+</body>
+</html>
