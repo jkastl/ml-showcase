@@ -44,6 +44,13 @@ the router, so training loops stop when you navigate away.
 
 ## Versioning
 
-The version and date in the footer of `index.html` are updated by hand, following
-[semver](https://semver.org/): patch for wording fixes, minor for new steps or visual changes,
-major for a restructure.
+The version and date in the footer of `index.html` are **updated by hand**. Nothing bumps them
+automatically. Change both in the same commit as the change they describe, following
+[semver](https://semver.org/):
+
+- **Patch** (`1.2.0` → `1.2.1`): fixing a typo or tweaking the wording.
+- **Minor** (`1.2.0` → `1.3.0`): adding, removing, or changing a step or chapter, or a small
+  visual change.
+- **Major** (`1.2.0` → `2.0.0`): a redesign or restructure of the app.
+
+The date is the day of the change, in `YYYY-MM-DD` format.
