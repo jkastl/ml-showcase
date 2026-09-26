@@ -607,5 +607,4 @@
     },
     leave(step) { if (step === 2) stopTrain(); },
   });
-  document.addEventListener('ml-theme', () => { if (S3.last) trainRefresh(); });
 })();

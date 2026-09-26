@@ -31,7 +31,7 @@ GitHub Pages serves the repo root from `main`.
 
 ```
 index.html        all chapter text and page structure; hash routes like #/risk/3
-style.css         light and dark themes (follows the OS setting)
+style.css         dark theme (the app is dark-only)
 js/core.js        seeded RNG, stats (AUC, ROC, confusion), canvas plot helper, controls, router
 js/risk.js        chapter 1: logistic regression
 js/triage.js      chapter 2: decision tree

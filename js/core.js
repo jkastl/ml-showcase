@@ -487,11 +487,6 @@
     ML.readTheme();
     buildSteppers();
     window.addEventListener('hashchange', route);
-    matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-      ML.readTheme();
-      ML.plots.forEach((p) => p.update());
-      document.dispatchEvent(new Event('ml-theme'));
-    });
   };
   ML.route = route;
 })();

@@ -715,7 +715,6 @@
     },
     leave(step) { if (step === 2) gdStop(); },
   });
-  document.addEventListener('ml-theme', () => { if (active === 4) updateSites(); });
 
   updateStats1();
   void sw1; void sw2; void sb;
