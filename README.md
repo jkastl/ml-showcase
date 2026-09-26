@@ -25,7 +25,8 @@ No build step and no dependencies. Open `index.html` in a browser, or serve the 
 python3 -m http.server
 ```
 
-GitHub Pages serves the repo root from `main`.
+GitHub Pages serves the repo root from `main`. Commit and push changes directly to `main`; there are
+no feature branches or pull requests.
 
 ## Layout
 
