@@ -371,7 +371,7 @@
     actDots.forEach((d, k) => { const dd = (d.X - e.px) ** 2 + (d.Y - e.py) ** 2; if (dd < bd) { bd = dd; best = k; } });
     if (best < 0) { pActs.hideTip(); return; }
     const ex = NEURON_SET[actDots[best].i];
-    pActs.showTip(e.px, e.py, `${CLS[ex.y]} beat<br>activation ${act(ex.x, S2.w).toFixed(2)}<br><span class="k">click to view it</span>`);
+    pActs.showTip(e.px, e.py, `${CLS[ex.y]} beat<br>activation ${act(ex.x, S2.w).toFixed(2)}<br><span class="k">tap to view it</span>`);
   });
   pActs.on('down', (e) => {
     let best = -1, bd = 64;

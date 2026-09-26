@@ -284,7 +284,7 @@
   pSplit.on('move', (e) => { if (e.dragging) { pSplit.hideTip(); dragSplit(e); return; } const i = pSplit.nearest(train, e, (q) => q.x[0], (q) => q.x[1], 10); if (i >= 0) pSplit.showTip(e.px, e.py, tipFor(train[i])); else pSplit.hideTip(); });
 
   const pImp = new ML.Plot('tr-imp', {
-    height: 190, x: F[0].dom, y: [0, Math.ceil(rootG * 11) / 10], drag: true, yTicks: 3,
+    height: 190, x: F[0].dom, y: [0, Math.ceil(rootG * 11) / 10], drag: 'x', yTicks: 3,
     margin: { l: 40, b: 36, t: 10, r: 12 }, label: 'Weighted Gini impurity at every threshold',
   });
   pImp.draw = (c, p) => {
@@ -433,7 +433,7 @@
   hoverPts(pOver, train);
   const pAuc = new ML.Plot('tr-auc', {
     aspect: 0.8, maxHeight: 360, x: [0.5, 12.5], y: [0.5, 1], xLabel: 'maximum depth', yLabel: 'AUC', xTicks: 6,
-    margin: { l: 44, r: 12 }, drag: true, label: 'Training and held-out AUC by tree depth',
+    margin: { l: 44, r: 12 }, drag: 'x', label: 'Training and held-out AUC by tree depth',
   });
   pAuc.draw = (c, p) => {
     p.axes({ xTicks: [1, 2, 4, 6, 8, 10, 12] });
@@ -458,7 +458,7 @@
   pAuc.on('move', (e) => {
     if (e.dragging) { pickDepth(e); return; }
     const q = S3.curve[clamp(Math.round(e.x), 1, 12) - 1];
-    if (q && e.inside) pAuc.showTip(e.px, e.py, `<b>Depth ${q.d}</b><br><span class="k">Training</span> ${fmt(q.tr)}<br><span class="k">Held out</span> ${fmt(q.te)}<br><span class="k">click to select</span>`);
+    if (q && e.inside) pAuc.showTip(e.px, e.py, `<b>Depth ${q.d}</b><br><span class="k">Training</span> ${fmt(q.tr)}<br><span class="k">Held out</span> ${fmt(q.te)}<br><span class="k">tap to select</span>`);
     else pAuc.hideTip();
   });
 

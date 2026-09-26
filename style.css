@@ -29,6 +29,7 @@
 }
 
 * { box-sizing: border-box; }
+a, button, input, label, .tnode { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 html { scroll-padding-top: 4rem; }
 body {
   margin: 0;
@@ -38,7 +39,6 @@ body {
   -webkit-text-size-adjust: 100%;
 }
 a { color: var(--accent); }
-a:hover { color: var(--accent-hover); }
 h1, h2, h3 { line-height: 1.2; margin: 0; }
 p { margin: 0 0 0.85em; }
 [hidden] { display: none !important; }
@@ -89,7 +89,6 @@ p { margin: 0 0 0.85em; }
   border-radius: 6px;
   white-space: nowrap;
 }
-.topnav a:hover { color: var(--ink); background: var(--raised); }
 .topnav a.active { color: var(--ink); background: var(--raised); box-shadow: inset 0 0 0 1px var(--line); }
 .topnav .n { color: var(--muted); margin-right: 0.3rem; font-variant-numeric: tabular-nums; }
 
@@ -117,7 +116,7 @@ main { max-width: 76rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
   flex-direction: column;
   transition: border-color 0.15s;
 }
-.card:hover, .card:focus-within { border-color: var(--accent); }
+.card:focus-within { border-color: var(--accent); }
 .card .kicker { margin-bottom: 0.4rem; }
 .card h2 { font-size: 1.15rem; margin-bottom: 0.5rem; }
 .card h2 a { color: var(--ink); text-decoration: none; }
@@ -168,7 +167,6 @@ main { max-width: 76rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
   font-size: 0.9rem;
   white-space: nowrap;
 }
-.pill:hover { color: var(--ink); border-color: var(--axis); }
 .pill .num {
   display: inline-grid;
   place-items: center;
@@ -284,9 +282,7 @@ main { max-width: 76rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
   gap: 0.4rem;
   white-space: nowrap;
 }
-.btn:hover { border-color: var(--axis); color: var(--ink); }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-.btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--on-accent); }
 .btn.ghost { background: transparent; }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; padding: 2px; background: var(--page); flex-wrap: wrap; }
@@ -407,6 +403,30 @@ footer.site {
   .brand span { display: none; }
   .panel { padding: 0.75rem; }
   .step-foot .count { display: none; }
+}
+/* Hover styles only where there is real hover; on touch they stick after a tap. */
+@media (hover: hover) {
+  a:hover { color: var(--accent-hover); }
+  .topnav a:hover { color: var(--ink); background: var(--raised); }
+  .card:hover { border-color: var(--accent); }
+  .pill:hover { color: var(--ink); border-color: var(--axis); }
+  .btn:hover { border-color: var(--axis); color: var(--ink); }
+  .btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--on-accent); }
+  .btn:disabled:hover { border-color: var(--line); }
+  .btn.primary:disabled:hover { background: var(--accent); border-color: var(--accent); }
+}
+/* Finger-sized targets (about 44px) on touch screens. */
+@media (pointer: coarse) {
+  .btn { min-height: 2.75rem; padding: 0.55rem 1rem; }
+  .seg { padding: 3px; }
+  .seg button { min-height: 2.5rem; padding: 0.45rem 0.85rem; }
+  .pill { min-height: 2.75rem; padding-right: 0.95rem; }
+  .topnav a { display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0 0.8rem; }
+  .check { min-height: 2.75rem; }
+  .check input { width: 1.35rem; height: 1.35rem; }
+  .ctl input[type="range"] { height: 2.25rem; margin: 0; }
+  .ctls { gap: 0.6rem 1.25rem; }
+  .tip { font-size: 0.85rem; }
 }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }

@@ -173,6 +173,8 @@
   p1.on('leave', () => { S.hover = -1; p1.update(); });
   p1.on('down', (e) => {
     if (!e.inside) return;
+    // On touch a tap is also how you inspect, so tapping right on a dot doesn't add one.
+    if (p1.touch && train().some((q) => Math.hypot(p1.sx(q.g) - e.px, p1.sy(q.bmi) - e.py) < 8)) return;
     S.added.push({ g: Math.round(e.x), bmi: Math.round(e.y * 10) / 10, y: +addSeg.value, added: true });
     dataChanged();
   });
@@ -247,7 +249,7 @@
 
   function explain(q) {
     const el = id('lr-formula');
-    if (!q) { el.textContent = 'Hover a patient to see their score.'; return; }
+    if (!q) { el.textContent = 'Hover or tap a patient to see their score.'; return; }
     const a = xg(q), bb = xb(q), z = score(q, S.w1, S.w2, S.b), pr = ML.sigmoid(z);
     const pActual = q.y ? pr : 1 - pr;
     el.textContent =
@@ -390,7 +392,7 @@
   });
   pLand.on('move', (e) => {
     if (!e.inside) { pLand.hideTip(); return; }
-    pLand.showTip(e.px, e.py, `<span class="k">glucose</span> ${fmt(e.x)} · <span class="k">BMI</span> ${fmt(e.y)}<br>log loss ${fmt(logLoss(train(), e.x, e.y, GD.b), 3)}<br><span class="k">click to start here</span>`);
+    pLand.showTip(e.px, e.py, `<span class="k">glucose</span> ${fmt(e.x)} · <span class="k">BMI</span> ${fmt(e.y)}<br>log loss ${fmt(logLoss(train(), e.x, e.y, GD.b), 3)}<br><span class="k">tap to start here</span>`);
   });
 
   const pCurve = new ML.Plot('lr-curve', {
@@ -438,7 +440,7 @@
   }
 
   const pHist = new ML.Plot('lr-hist', {
-    height: 240, x: [0, 1], y: [-1, 1], xLabel: 'predicted 5-year risk', drag: true,
+    height: 240, x: [0, 1], y: [-1, 1], xLabel: 'predicted 5-year risk', drag: 'x',
     xFmt: (v) => Math.round(v * 100) + '%', margin: { l: 34, t: 22 },
     label: 'Dot plot of predicted risk for held-out patients, split by outcome, with a draggable threshold',
   });

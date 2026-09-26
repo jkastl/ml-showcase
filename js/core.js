@@ -150,7 +150,8 @@
       this.draw = o.draw || null;
       this.w = 0;
       this.h = 0;
-      this.canvas.style.touchAction = this.o.drag ? 'none' : 'pan-y';
+      // drag: 'x' is a sideways-only drag, so a vertical swipe can still scroll the page.
+      this.canvas.style.touchAction = this.o.drag && this.o.drag !== 'x' ? 'none' : 'pan-y';
       this._bindPointer();
       new ResizeObserver(() => this.resize()).observe(this.host);
       ML.plots.add(this);
@@ -294,12 +295,20 @@
           dragging: this.dragging,
         };
       };
+      // Touch has no hover: a tap (or a sideways scrub on a scrollable plot) stands in for it,
+      // and the readout it shows stays pinned until the next tap elsewhere.
       cv.addEventListener('pointerdown', (e) => {
-        this.dragging = true;
+        this.touch = e.pointerType === 'touch';
+        this.dragging = !!this.o.drag;
         if (this.o.drag) cv.setPointerCapture(e.pointerId);
         if (this.handlers.down) this.handlers.down(pos(e));
+        if (this.touch) {
+          this.pinned = true;
+          if (this.handlers.move) this.handlers.move(Object.assign(pos(e), { dragging: false }));
+        }
       });
       cv.addEventListener('pointermove', (e) => {
+        this.touch = e.pointerType === 'touch';
         if (this.handlers.move) this.handlers.move(pos(e));
       });
       const end = (e) => {
@@ -308,27 +317,41 @@
         if (this.handlers.up) this.handlers.up(pos(e));
       };
       cv.addEventListener('pointerup', end);
-      cv.addEventListener('pointercancel', end);
-      cv.addEventListener('pointerleave', () => {
+      cv.addEventListener('pointercancel', (e) => {
+        end(e);
+        // The browser took the gesture over for scrolling.
+        if (e.pointerType === 'touch') this.unpin();
+      });
+      cv.addEventListener('pointerleave', (e) => {
+        if (e.pointerType === 'touch') return;
         if (!this.o.drag) this.dragging = false;
         this.hideTip();
         if (this.handlers.leave) this.handlers.leave();
       });
+    }
+    unpin() {
+      if (!this.pinned) return;
+      this.pinned = false;
+      this.hideTip();
+      if (this.handlers.leave) this.handlers.leave();
     }
     showTip(px, py, html) {
       const t = this.tip;
       t.innerHTML = html;
       t.hidden = false;
       const tw = t.offsetWidth, th = t.offsetHeight;
-      let x = px + 14, y = py - th - 10;
+      // Keep the tip clear of a fingertip.
+      const gap = this.touch ? 36 : 10;
+      let x = px + 14, y = py - th - gap;
       if (x + tw > this.w) x = px - tw - 14;
       if (x < 0) x = 0;
-      if (y < 0) y = py + 16;
+      if (y < 0) y = this.touch ? 0 : py + 16;
       t.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
     }
     hideTip() { this.tip.hidden = true; }
     // Index of the item nearest the pointer within maxPx, or -1.
     nearest(items, p, getX, getY, maxPx = 14) {
+      if (this.touch) maxPx = Math.max(maxPx, 22);
       let best = -1, bd = maxPx * maxPx;
       for (let i = 0; i < items.length; i++) {
         const dx = this.sx(getX(items[i])) - p.px, dy = this.sy(getY(items[i])) - p.py;
@@ -339,6 +362,12 @@
     }
   }
   ML.Plot = Plot;
+
+  // Sliders and checkboxes keep a pinned readout, so you can watch it change.
+  document.addEventListener('pointerdown', (e) => {
+    if (e.target.closest && e.target.closest('input')) return;
+    for (const p of ML.plots) if (p.pinned && e.target !== p.canvas) p.unpin();
+  });
 
   // Filled marker with a surface-colored ring, so overlapping dots stay legible.
   ML.SHAPES = ['circle', 'square', 'triangle', 'diamond', 'down', 'plus'];

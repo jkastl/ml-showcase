@@ -171,12 +171,12 @@
       c.fillStyle = T['ink-2'];
       c.font = '600 13px ' + ML.FONT;
       c.textAlign = 'center';
-      c.fillText('Click to drop a center', p.m.l + p.iw / 2, p.m.t + 22);
+      c.fillText('Tap to drop a center', p.m.l + p.iw / 2, p.m.t + 22);
     }
   };
   function hitCent(plot, cents, e) {
     for (let k = cents.length - 1; k >= 0; k--) {
-      if (Math.hypot(plot.sx(cents[k].x) - e.px, plot.sy(cents[k].y) - e.py) < 16) return k;
+      if (Math.hypot(plot.sx(cents[k].x) - e.px, plot.sy(cents[k].y) - e.py) < (plot.touch ? 24 : 16)) return k;
     }
     return -1;
   }
@@ -341,7 +341,7 @@
       const k = Math.round(e.x);
       const r = sweep && sweep[k - 1];
       if (!r || !e.inside || !Number.isFinite(r[key])) { p.hideTip(); return; }
-      p.showTip(e.px, e.py, `<b>k = ${k}</b><br><span class="k">inertia</span> ${fmt(r.inertia, 0)}<br><span class="k">silhouette</span> ${fmt(r.sil)}<br><span class="k">click to view</span>`);
+      p.showTip(e.px, e.py, `<b>k = ${k}</b><br><span class="k">inertia</span> ${fmt(r.inertia, 0)}<br><span class="k">silhouette</span> ${fmt(r.sil)}<br><span class="k">tap to view</span>`);
     });
     return p;
   };

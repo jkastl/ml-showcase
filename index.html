@@ -34,7 +34,7 @@
         <p class="kicker">Machine learning, step by step</p>
         <h1>Watch a model learn, then try to break it.</h1>
         <p>Four clinical problems, four different techniques. Every model here is trained live in your
-          browser, one step at a time, and every step has something to drag, click or switch.</p>
+          browser, one step at a time, and every step has something to drag, tap or switch.</p>
       </div>
       <ul class="cards">
         <li class="card">
@@ -98,8 +98,8 @@
               the features to the label and still works on patients it has never seen.</p>
             <p>We've also locked away <strong>150 more patients</strong> for testing. The model never learns
               from them; we'll use them in step 4 to see how it really does.</p>
-            <div class="try"><b>Try it</b>Hover a dot to see that patient. Then pick an outcome and click the
-              chart to add patients of your own. They join the training data for the next steps, so you can
+            <div class="try"><b>Try it</b>Hover or tap a dot to see that patient. Then pick an outcome and click or tap
+              the chart to add patients of your own. They join the training data for the next steps, so you can
               try to confuse the model.</div>
           </div>
           <div class="stage">
@@ -108,7 +108,7 @@
               <div class="legend"><span><i class="sw" style="background:var(--s1)"></i>No diabetes at 5 years</span><span><i class="sw" style="background:var(--s2)"></i>Developed type 2 diabetes</span></div>
               <div id="lr-data"></div>
               <div class="controls" style="margin-top:.6rem">
-                <span class="panel-sub" style="margin:0">Click to add:</span>
+                <span class="panel-sub" style="margin:0">Tap to add:</span>
                 <div class="seg" id="lr-add" role="group" aria-label="Outcome for added patients">
                   <button data-v="1" aria-pressed="true"><i class="sw" style="background:var(--s2)"></i>Developed diabetes</button>
                   <button data-v="0" aria-pressed="false"><i class="sw" style="background:var(--s1)"></i>Didn't</button>
@@ -139,8 +139,8 @@
             <p><strong>Log loss</strong> grades the predictions: for each patient, −log of the probability the
               model gave to what actually happened. Confidently wrong costs a lot. Confidently right costs almost
               nothing.</p>
-            <div class="try"><b>Try it</b>Move the sliders to get the log loss as low as you can. Hover a patient
-              to see their score worked out. Getting under 0.50 is good going.</div>
+            <div class="try"><b>Try it</b>Move the sliders to get the log loss as low as you can. Hover or tap a
+              patient to see their score worked out. Getting under 0.50 is good going.</div>
           </div>
           <div class="stage">
             <div class="panel">
@@ -164,7 +164,7 @@
                 <p class="panel-title">The sigmoid</p>
                 <p class="panel-sub">Every patient placed by their score <em>z</em></p>
                 <div id="lr-sig"></div>
-                <div class="formula" id="lr-formula" aria-live="polite">Hover a patient to see their score.</div>
+                <div class="formula" id="lr-formula" aria-live="polite">Hover or tap a patient to see their score.</div>
               </div>
             </div>
           </div>
@@ -183,7 +183,7 @@
             <p>The <strong>learning rate</strong> is the step size. Too small and it crawls. Too large and it
               overshoots, bouncing across the valley or flying out of it.</p>
             <p>It starts from wherever you left the sliders in step 2.</p>
-            <div class="try"><b>Try it</b>Press Train. Then click anywhere on the loss map to restart from there,
+            <div class="try"><b>Try it</b>Press Train. Then tap anywhere on the loss map to restart from there,
               and try a learning rate above 6.</div>
           </div>
           <div class="stage">
@@ -195,7 +195,7 @@
               </div>
               <div class="panel">
                 <p class="panel-title">Loss landscape</p>
-                <p class="panel-sub">Click to move the starting point</p>
+                <p class="panel-sub">Tap to move the starting point</p>
                 <div id="lr-land"></div>
               </div>
             </div>
@@ -389,7 +389,7 @@
               every question. A leaf's predicted risk is just the share of its patients who deteriorated. Darker
               orange means higher risk.</p>
             <div class="try"><b>Try it</b>Press Split to add one question at a time; the tree picks the split
-              that removes the most impurity anywhere. Click a node in the diagram to highlight its patients.</div>
+              that removes the most impurity anywhere. Tap a node in the diagram to highlight its patients.</div>
           </div>
           <div class="stage">
             <div class="panel">
@@ -514,7 +514,7 @@
               whichever center is closest. The shading shows each center's territory.</p>
             <p><strong>Inertia</strong> is the total squared distance from each patient to their center. Small
               inertia means tight groups; k-means tries to make it as small as possible.</p>
-            <div class="try"><b>Try it</b>Click the chart to drop 2 to 6 centers where you think the groups are.
+            <div class="try"><b>Try it</b>Tap the chart to drop 2 to 6 centers where you think the groups are.
               Drag them around and watch patients switch sides and the inertia change.</div>
           </div>
           <div class="stage">
@@ -585,7 +585,7 @@
               the next nearest one. It runs from −1 to 1; higher is better.</p>
             <p>Clusters are a hypothesis. The 2018 subgroups mattered because they went on to predict different
               complication rates, not because an algorithm drew them.</p>
-            <div class="try"><b>Try it</b>Click a k on either chart and read the group profiles. Would a
+            <div class="try"><b>Try it</b>Tap a k on either chart and read the group profiles. Would a
               clinician recognize these groups?</div>
           </div>
           <div class="stage">
@@ -668,7 +668,7 @@
             </ul>
             <p>The strip below the trace is the same beat as the network receives it: 64 numbers, colored by
               value.</p>
-            <div class="try"><b>Try it</b>Flip through beats of each type and hover the strip. Then lower the
+            <div class="try"><b>Try it</b>Flip through beats of each type and hover or drag along the strip. Then lower the
               sampling rate and see how few samples it takes before a narrow QRS disappears.</div>
           </div>
           <div class="stage">
@@ -687,7 +687,7 @@
             </div>
             <div class="panel">
               <p class="panel-title">The input vector</p>
-              <p class="panel-sub">Blue below zero, red above · hover for values</p>
+              <p class="panel-sub">Blue below zero, red above · hover or tap for values</p>
               <div id="ecg-strip"></div>
             </div>
           </div>
@@ -912,7 +912,7 @@
   <!-- Version and date are bumped by hand; see README.md. -->
   <footer class="site">
     Simulated data only. Runs entirely in your browser. Not for clinical use.
-    · <a href="https://github.com/jkastl/ml-showcase">Source</a> · v1.1.0 · 2026-09-26
+    · <a href="https://github.com/jkastl/ml-showcase">Source</a> · v1.2.0 · 2026-09-26
   </footer>
 
   <script src="js/core.js"></script>
