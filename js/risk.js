@@ -258,8 +258,7 @@
       `${q.y ? 'Developed diabetes' : 'No diabetes'}, so loss = −log(${fmt(pActual)}) = ${fmt(-Math.log(Math.max(1e-12, pActual)))}`;
   }
 
-  function handChanged() {
-    S.handVersion++;
+  function handRefresh() {
     const pts = train();
     const L = logLoss(pts, S.w1, S.w2, S.b);
     S.best = Math.min(S.best, L);
@@ -271,9 +270,11 @@
     if (S.hover >= 0) explain(pts[S.hover]);
   }
   const f2 = (v) => fmt(v);
-  const sw1 = ML.range('lr-w1', (v) => { S.w1 = v; handChanged(); }, f2);
-  const sw2 = ML.range('lr-w2', (v) => { S.w2 = v; handChanged(); }, f2);
-  const sb = ML.range('lr-b', (v) => { S.b = v; handChanged(); }, f2);
+  // Only a slider move counts as new weights, so step 3 restarts from them; just revisiting step 2 doesn't.
+  const handSlider = (key) => (v) => { S[key] = v; S.handVersion++; handRefresh(); };
+  ML.range('lr-w1', handSlider('w1'), f2);
+  ML.range('lr-w2', handSlider('w2'), f2);
+  ML.range('lr-b', handSlider('b'), f2);
 
   // ---------- step 3: gradient descent ----------
 
@@ -707,7 +708,7 @@
     enter(step) {
       active = step;
       if (step === 0) updateStats1();
-      if (step === 1) handChanged();
+      if (step === 1) handRefresh();
       if (step === 2) {
         if (GD.from !== S.handVersion + ':' + S.dataVersion) { GD.from = S.handVersion + ':' + S.dataVersion; gdReset(S.w1, S.w2, S.b); }
         else gdRefresh();
@@ -719,5 +720,4 @@
   });
 
   updateStats1();
-  void sw1; void sw2; void sb;
 })();

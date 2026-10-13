@@ -4,7 +4,7 @@
   const { id, text, fmt, clamp } = ML;
   const T = ML.theme;
   const XD = [15, 90], YD = [5, 14];
-  const MAXK = 6;
+  const MAXK = 6; // one color and marker shape per cluster
 
   // ---------- simulated patients ----------
 
@@ -142,9 +142,9 @@
     });
   }
   function drawTrails(p, trails) {
-    trails.forEach((tr, k) => {
+    for (const tr of trails) {
       if (tr.length > 1) p.line(tr.map((q) => q.x), tr.map((q) => q.y), ML.rgba(T.ink, 0.55), 1.5);
-    });
+    }
   }
   function ptTip(plot, e, lab, extra) {
     const i = plot.nearest(pts, e, (q) => q.x, (q) => q.y, 10);
@@ -301,7 +301,7 @@
       const I = K.hist[K.hist.length - 1];
       msg = `Converged after ${rounds} rounds: nobody switched clusters. Inertia ${fmt(I, 1)}.`;
       if (K.cents.length === 4) msg += I > best4.inertia * 1.05 ? ' Stuck: the best k = 4 answer is lower.' : ' That matches the best k = 4 answer.';
-    } else if (!K.lab && K.note === 'auto') msg = 'You didn\u2019t drop centers in step 1, so we started with 4. Press Assign.';
+    } else if (!K.lab && K.note === 'auto') msg = 'Step 1 had fewer than 2 centers, so we started with 4. Press Assign.';
     else if (!K.lab) msg = K.note === 'bad' ? 'All four centers start bunched among the younger patients. Press Assign.' : 'Press Assign to give every patient to their nearest center.';
     else msg = K.phase === 'move' ? 'Now move each center to the average of its patients.' : 'Centers moved. Assign again: some patients may switch.';
     text('km-status', msg);
@@ -316,27 +316,27 @@
   function ensureSweep() {
     if (sweep) return;
     sweep = [];
-    for (let k = 1; k <= 8; k++) {
+    for (let k = 1; k <= MAXK; k++) {
       const res = bestOf(k, STD, 10, 100 + k);
       sweep.push({ k, res, inertia: res.inertia, sil: silhouette(res.lab, k, STD) });
     }
   }
   const kPlot = (host, key, yLabel, yd) => {
     const p = new ML.Plot(host, {
-      aspect: 0.75, maxHeight: 260, x: [0.5, 8.5], y: yd, xLabel: 'k (number of clusters)', yLabel, xTicks: 8,
+      aspect: 0.75, maxHeight: 260, x: [0.5, MAXK + 0.5], y: yd, xLabel: 'k (number of clusters)', yLabel,
       margin: { l: 50, r: 12 }, label: `${yLabel} by number of clusters`,
     });
     p.draw = (c, pl) => {
       if (!sweep) return;
       const rows = sweep.filter((r) => Number.isFinite(r[key]));
       if (key === 'inertia') pl.o.y = [0, Math.ceil(sweep[0].inertia / 100) * 100];
-      pl.axes({ xTicks: [1, 2, 3, 4, 5, 6, 7, 8] });
+      pl.axes({ xTicks: sweep.map((r) => r.k) });
       c.fillStyle = ML.rgba(T.ink, 0.06);
       c.fillRect(pl.sx(S3.k) - 12, pl.m.t, 24, pl.ih);
       pl.line(rows.map((r) => r.k), rows.map((r) => r[key]), T.s1, 2);
       for (const r of rows) ML.marker(c, 'circle', pl.sx(r.k), pl.sy(r[key]), r.k === S3.k ? 6 : 4, r.k === S3.k ? T.ink : T.s1, T.surface);
     };
-    p.on('down', (e) => { const k = clamp(Math.round(e.x), key === 'sil' ? 2 : 1, 8); S3.k = k; kChanged(); });
+    p.on('down', (e) => { const k = clamp(Math.round(e.x), key === 'sil' ? 2 : 1, MAXK); S3.k = k; kChanged(); });
     p.on('move', (e) => {
       const k = Math.round(e.x);
       const r = sweep && sweep[k - 1];
@@ -353,10 +353,10 @@
     const res = sweep[S3.k - 1].res;
     p.axes();
     p.clip();
-    drawTerritories(p, res.cents.slice(0, MAXK), STD);
-    drawPts(p, res.lab.map((l) => Math.min(l, MAXK - 1)));
+    drawTerritories(p, res.cents, STD);
+    drawPts(p, res.lab);
     c.restore();
-    drawCents(p, res.cents.slice(0, MAXK), -1);
+    drawCents(p, res.cents, -1);
   };
   pK.on('move', (e) => ptTip(pK, e, sweep && sweep[S3.k - 1].res.lab));
 
@@ -386,7 +386,7 @@
     id('km-profiles').innerHTML = res.cents.map((cc, k) => {
       const n = res.lab.filter((l) => l === k).length;
       const d = describe(cc.x, cc.y);
-      return `<div class="profile"><b>${shapeSvg(Math.min(k, MAXK - 1))}Cluster ${k + 1} · ${n} patients</b>` +
+      return `<div class="profile"><b>${shapeSvg(k)}Cluster ${k + 1} · ${n} patients</b>` +
         `Age ${Math.round(cc.x)} · HbA1c ${cc.y.toFixed(1)}%<br>${d.label}.${d.hint ? `<br><span style="color:var(--muted)">${d.hint}</span>` : ''}</div>`;
     }).join('');
     pElbow.update(); pSil.update(); pK.update();

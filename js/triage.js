@@ -405,7 +405,7 @@
 
   const S3 = { depth: 3, minLeaf: 5, root: null, curve: [] };
   const depthR = ML.range('tr-depth', (v) => { S3.depth = v; overChanged(); });
-  const leafR = ML.range('tr-minleaf', (v) => { S3.minLeaf = v; overChanged(true); });
+  ML.range('tr-minleaf', (v) => { S3.minLeaf = v; overChanged(true); });
   function overChanged(recurve) {
     S3.root = build(train, S3.depth, S3.minLeaf);
     if (recurve || !S3.curve.length) {
@@ -543,5 +543,4 @@
       if (step === 3) traceChanged();
     },
   });
-  void leafR;
 })();

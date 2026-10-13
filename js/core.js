@@ -22,7 +22,6 @@
   };
   ML.sigmoid = (z) => 1 / (1 + Math.exp(-z));
   ML.clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-  ML.lerp = (a, b, t) => a + (b - a) * t;
   ML.mean = (a) => a.reduce((s, v) => s + v, 0) / (a.length || 1);
   ML.sd = function (a) {
     const m = ML.mean(a);
@@ -112,7 +111,6 @@
     const n = parseInt(h.length === 3 ? h.replace(/./g, '$&$&') : h, 16);
     return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
   }
-  ML.rgb = hexRgb;
   ML.rgba = function (hex, a) {
     const [r, g, b] = hexRgb(hex);
     return `rgba(${r},${g},${b},${a})`;

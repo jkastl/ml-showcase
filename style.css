@@ -17,7 +17,7 @@
   --s3: #199e70;
   --s4: #c98500;
   --s5: #d55181;
-  --s6: #008300;
+  --s6: #8a6cf0;
   --good: #0ca30c;
   --good-ink: #3fc13f;
   --critical: #e25555;
@@ -138,7 +138,6 @@ main { max-width: 76rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
   font-size: 0.92rem;
   max-width: 46rem;
 }
-.howto { max-width: 46rem; margin: 0 0 2rem; color: var(--ink-2); }
 
 /* ---------- chapter ---------- */
 .chapter-head { max-width: 50rem; padding: 1rem 0 1.25rem; }
@@ -219,7 +218,6 @@ main { max-width: 76rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
 }
 .panel-sub { font-size: 0.82rem; color: var(--muted); margin: 0 0 0.6rem; }
 .row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
-.row.r3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .row.wide-left { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
 
 .step-foot {
@@ -399,7 +397,7 @@ footer.site {
 }
 @media (max-width: 640px) {
   main { padding-top: 1rem; }
-  .row, .row.r3, .row.wide-left { grid-template-columns: minmax(0, 1fr); }
+  .row, .row.wide-left { grid-template-columns: minmax(0, 1fr); }
   .brand span { display: none; }
   .panel { padding: 0.75rem; }
   .step-foot .count { display: none; }
