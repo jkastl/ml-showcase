@@ -579,11 +579,15 @@
     text('lr-cal-thr', pct(S.thr));
     id('lr-recal').textContent = S.recal !== null ? 'Undo recalibration' : 'Recalibrate on 200 local patients';
     const gap = ML.mean(sn) - ML.mean(yn);
+    const off = `${gap > 0 ? 'overestimates' : 'underestimates'} risk by ${Math.round(Math.abs(gap) * 100)} percentage points`;
     let note;
-    if (Math.abs(gap) < 0.025) note = S.recal !== null
-      ? 'Recalibrated: predicted and observed rates line up again, and the ranking (AUC) never changed.'
-      : 'Predicted and observed rates match here, so the model is well calibrated at this site.';
-    else note = `At the new site the model ${gap > 0 ? 'overestimates' : 'underestimates'} risk by ${Math.round(Math.abs(gap) * 100)} percentage points on average, while its AUC barely changes. It still ranks patients well; its numbers are just wrong.`;
+    if (S.recal !== null) {
+      // Fit on 200 patients and checked on the other 1,300, so a few points of error can remain.
+      note = Math.abs(gap) < 0.025
+        ? 'Recalibrated: predicted and observed rates line up again, and the ranking (AUC) never changed.'
+        : `Recalibrated, and the ranking (AUC) never changed, but on this site's other patients it still ${off}. 200 patients only pin a rate down to within a few points.`;
+    } else if (Math.abs(gap) < 0.025) note = 'Predicted and observed rates match here, so the model is well calibrated at this site.';
+    else note = `At the new site the model ${off} on average, while its AUC barely changes. It still ranks patients well; its numbers are just wrong.`;
     text('lr-cal-note', note);
     pCal.update();
   }
