@@ -1,45 +1,12 @@
-/* Chapter 1: logistic regression for 5-year type 2 diabetes risk. */
+/* Chapter 1 page: logistic regression for 5-year type 2 diabetes risk. The model is in js/engine/logistic.js. */
 (function () {
   'use strict';
   const { id, text, fmt, pct, clamp } = ML;
   const T = ML.theme;
+  const LR = ML.logistic;
+  const { base, test, MG, SG, MB, SB, xg, xb, score, prob, logLoss, accuracy, gradient, site, siteDefault } = LR;
   const G = [50, 205]; // glucose axis (mg/dL)
   const B = [15, 50]; // BMI axis
-  const TRUE_B0 = -1.1;
-
-  // ---------- simulated patients ----------
-
-  // Draws the latent pieces separately so a site can be re-simulated with shifted
-  // prevalence or lab bias while keeping the same underlying people.
-  function latent(r) {
-    const zg = ML.randn(r);
-    return { zg, zb: 0.35 * zg + 0.937 * ML.randn(r), u: r() };
-  }
-  function realize(L, b0, bias) {
-    const gTrue = clamp(122 + 28 * L.zg, 60, 199);
-    const bmi = clamp(29 + 5.5 * L.zb, 17, 49);
-    const logit = b0 + (1.6 * (gTrue - 122)) / 28 + (0.9 * (bmi - 29)) / 5.5;
-    return {
-      g: Math.round(clamp(gTrue + bias, 40, 240)),
-      bmi: Math.round(bmi * 10) / 10,
-      y: L.u < ML.sigmoid(logit) ? 1 : 0,
-      risk: ML.sigmoid(logit),
-    };
-  }
-  function cohort(seed, n) {
-    const r = ML.rng(seed);
-    return Array.from({ length: n }, () => realize(latent(r), TRUE_B0, 0));
-  }
-
-  const base = cohort(11, 220);
-  const test = cohort(12, 150);
-  const siteLatent = (() => { const r = ML.rng(13); return Array.from({ length: 1500 }, () => latent(r)); })();
-
-  // Standardize with the original training data so weights keep their meaning as patients are added.
-  const MG = ML.mean(base.map((p) => p.g)), SG = ML.sd(base.map((p) => p.g));
-  const MB = ML.mean(base.map((p) => p.bmi)), SB = ML.sd(base.map((p) => p.bmi));
-  const xg = (p) => (p.g - MG) / SG;
-  const xb = (p) => (p.bmi - MB) / SB;
 
   const S = {
     added: [],
@@ -54,42 +21,9 @@
   const train = () => base.concat(S.added);
   let active = 0;
 
-  // ---------- model ----------
-
-  const score = (p, w1, w2, b) => w1 * xg(p) + w2 * xb(p) + b;
-  const prob = (p, w1, w2, b) => ML.sigmoid(score(p, w1, w2, b));
-  function logLoss(pts, w1, w2, b) {
-    let s = 0;
-    for (const p of pts) {
-      const q = clamp(prob(p, w1, w2, b), 1e-12, 1 - 1e-12);
-      s -= p.y ? Math.log(q) : Math.log(1 - q);
-    }
-    return s / pts.length;
-  }
-  function accuracy(pts, w1, w2, b) {
-    let k = 0;
-    for (const p of pts) if ((prob(p, w1, w2, b) >= 0.5) === !!p.y) k++;
-    return k / pts.length;
-  }
-  function gradient(pts, w1, w2, b) {
-    let g1 = 0, g2 = 0, g0 = 0;
-    for (const p of pts) {
-      const e = prob(p, w1, w2, b) - p.y;
-      g1 += e * xg(p); g2 += e * xb(p); g0 += e;
-    }
-    const n = pts.length;
-    return [g1 / n, g2 / n, g0 / n];
-  }
   let fitted = null;
   function model() {
-    if (fitted && fitted.v === S.dataVersion) return fitted;
-    const pts = train();
-    let w1 = 0, w2 = 0, b = 0;
-    for (let i = 0; i < 3000; i++) {
-      const [g1, g2, g0] = gradient(pts, w1, w2, b);
-      w1 -= 1.5 * g1; w2 -= 1.5 * g2; b -= 1.5 * g0;
-    }
-    fitted = { v: S.dataVersion, w1, w2, b, loss: logLoss(pts, w1, w2, b) };
+    if (!fitted || fitted.v !== S.dataVersion) fitted = Object.assign({ v: S.dataVersion }, LR.fit(train()));
     return fitted;
   }
 
@@ -566,62 +500,22 @@
     if (active === 4) updateSites();
   }
 
-  ML.btn('lr-p-screen', () => {
-    let t = 0.01;
-    for (let v = 0.99; v >= 0.01; v -= 0.01) if (ML.confusion(testScores, testLabels, v).sens >= 0.9) { t = v; break; }
-    setThr(t);
-  });
-  ML.btn('lr-p-spec', () => {
-    let t = 0.99;
-    for (let v = 0.01; v <= 0.99; v += 0.01) if (ML.confusion(testScores, testLabels, v).spec >= 0.9) { t = v; break; }
-    setThr(t);
-  });
-  ML.btn('lr-p-bal', () => {
-    let t = 0.5, bj = -1;
-    for (let v = 0.01; v <= 0.99; v += 0.01) {
-      const m = ML.confusion(testScores, testLabels, v);
-      if (m.sens + m.spec > bj) { bj = m.sens + m.spec; t = v; }
-    }
-    setThr(t);
-  });
+  ML.btn('lr-p-screen', () => setThr(LR.screeningThreshold(testScores, testLabels)));
+  ML.btn('lr-p-spec', () => setThr(LR.specificThreshold(testScores, testLabels)));
+  ML.btn('lr-p-bal', () => setThr(LR.balancedThreshold(testScores, testLabels)));
   const cost = ML.range('lr-cost', costNote, (v) => (v === 1 ? '1 referral' : v + ' referrals'));
   function costNote() {
     const c = cost.value;
-    text('lr-cost-note', `Flag anyone above 1 ÷ (1 + ${c}) = ${pct(1 / (1 + c), 1)} risk.`);
+    text('lr-cost-note', `Flag anyone above 1 ÷ (1 + ${c}) = ${pct(LR.costThreshold(c), 1)} risk.`);
   }
-  ML.btn('lr-usecost', () => setThr(1 / (1 + cost.value)));
+  ML.btn('lr-usecost', () => setThr(LR.costThreshold(cost.value)));
   costNote();
 
   // ---------- step 5: a new hospital ----------
 
-  const siteDefault = (() => {
-    let s = 0;
-    for (const L of siteLatent) s += realize(L, TRUE_B0, 0).risk;
-    return Math.round((s / siteLatent.length) * 100) / 100;
-  })();
   const prevNew = ML.range('lr-prevnew', () => { S.recal = null; updateSites(); }, (v) => pct(v));
   const shift = ML.range('lr-shift', () => { S.recal = null; updateSites(); }, (v) => (v > 0 ? '+' : v < 0 ? '−' : '±') + Math.abs(v) + ' mg/dL');
   prevNew.set(siteDefault);
-
-  function interceptFor(prev) {
-    let lo = -8, hi = 6;
-    for (let k = 0; k < 40; k++) {
-      const mid = (lo + hi) / 2;
-      let s = 0;
-      for (const L of siteLatent) s += realize(L, mid, 0).risk;
-      if (s / siteLatent.length < prev) lo = mid; else hi = mid;
-    }
-    return (lo + hi) / 2;
-  }
-  function site(prev, bias) {
-    const b0 = Math.abs(prev - siteDefault) < 0.005 ? TRUE_B0 : interceptFor(prev);
-    return siteLatent.map((L) => realize(L, b0, bias));
-  }
-  function calCurve(scores, labels) {
-    const bins = Array.from({ length: 10 }, () => ({ n: 0, s: 0, y: 0 }));
-    scores.forEach((s, i) => { const b = bins[Math.min(9, Math.floor(s * 10))]; b.n++; b.s += s; b.y += labels[i]; });
-    return bins.filter((b) => b.n >= 10).map((b) => ({ x: b.s / b.n, y: b.y / b.n, n: b.n }));
-  }
 
   let calLines = [];
   const pCal = new ML.Plot('lr-cal', {
@@ -652,15 +546,7 @@
   ML.btn('lr-recal', () => {
     if (S.recal !== null) { S.recal = null; updateSites(); return; }
     const m = model();
-    const pts = site(prevNew.value, shift.value).slice(0, 200);
-    const zs = pts.map((p) => score(p, m.w1, m.w2, m.b));
-    let d = 0;
-    for (let k = 0; k < 25; k++) {
-      let g = 0, h = 0;
-      zs.forEach((z, i) => { const q = ML.sigmoid(z + d); g += q - pts[i].y; h += q * (1 - q); });
-      d -= g / Math.max(h, 1e-9);
-    }
-    S.recal = d;
+    S.recal = LR.recalibrate(site(prevNew.value, shift.value).slice(0, 200), m.w1, m.w2, m.b);
     updateSites();
   });
   ML.btn('lr-sim-reset', () => { prevNew.set(siteDefault); shift.set(0); S.recal = null; updateSites(); });
@@ -676,8 +562,8 @@
     const mo = ML.confusion(so, yo, S.thr), mn = ML.confusion(sn, yn, S.thr);
     const newName = S.recal !== null ? 'New site, recalibrated' : 'New site';
     calLines = [
-      { name: 'Original hospital', color: T.s1, pts: calCurve(so, yo) },
-      { name: newName, color: S.recal !== null ? T.s3 : T.s2, pts: calCurve(sn, yn) },
+      { name: 'Original hospital', color: T.s1, pts: LR.calibration(so, yo) },
+      { name: newName, color: S.recal !== null ? T.s3 : T.s2, pts: LR.calibration(sn, yn) },
     ];
     id('lr-cal-legend').innerHTML = calLines.map((L) => `<span><i class="sw line" style="background:${L.color}"></i>${L.name}</span>`).join('');
     const rows = [

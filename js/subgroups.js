@@ -1,110 +1,12 @@
-/* Chapter 3: k-means clustering of simulated patients at diabetes diagnosis. */
+/* Chapter 3 page: k-means clustering of simulated patients at diabetes diagnosis. The algorithm is in js/engine/kmeans.js. */
 (function () {
   'use strict';
   const { id, text, fmt, clamp } = ML;
   const T = ML.theme;
+  const KM = ML.kmeans;
+  const { GROUPS, pts, STD, RAW } = KM;
   const XD = [15, 90], YD = [5, 14];
   const MAXK = 6; // one color and marker shape per cluster
-
-  // ---------- simulated patients ----------
-
-  const GROUPS = [
-    { age: 34, sa: 6, a1c: 11.2, sb: 0.8, n: 60, name: 'A' },
-    { age: 52, sa: 6, a1c: 9.3, sb: 0.55, n: 80, name: 'B' },
-    { age: 50, sa: 7, a1c: 7.0, sb: 0.45, n: 90, name: 'C' },
-    { age: 70, sa: 5, a1c: 6.9, sb: 0.5, n: 90, name: 'D' },
-  ];
-  const pts = [];
-  (() => {
-    const r = ML.rng(31);
-    GROUPS.forEach((g, gi) => {
-      for (let i = 0; i < g.n; i++) {
-        pts.push({
-          x: Math.round(clamp(g.age + g.sa * ML.randn(r), 20, 85)),
-          y: Math.round(clamp(g.a1c + g.sb * ML.randn(r), 5.4, 13.5) * 10) / 10,
-          g: gi,
-        });
-      }
-    });
-    ML.shuffle(pts, r);
-  })();
-  const SD = [ML.sd(pts.map((p) => p.x)), ML.sd(pts.map((p) => p.y))];
-  const STD = SD, RAW = [1, 1];
-
-  // ---------- k-means ----------
-
-  const d2 = (p, c, sc) => { const dx = (p.x - c.x) / sc[0], dy = (p.y - c.y) / sc[1]; return dx * dx + dy * dy; };
-  function nearest(p, cents, sc) {
-    let best = 0, bd = Infinity;
-    for (let k = 0; k < cents.length; k++) { const d = d2(p, cents[k], sc); if (d < bd) { bd = d; best = k; } }
-    return best;
-  }
-  const assignAll = (cents, sc) => pts.map((p) => nearest(p, cents, sc));
-  function centroids(lab, cents) {
-    return cents.map((c, k) => {
-      let sx = 0, sy = 0, n = 0;
-      for (let i = 0; i < pts.length; i++) if (lab[i] === k) { sx += pts[i].x; sy += pts[i].y; n++; }
-      return n ? { x: sx / n, y: sy / n } : { x: c.x, y: c.y };
-    });
-  }
-  function inertia(lab, cents, sc) {
-    let s = 0;
-    for (let i = 0; i < pts.length; i++) s += d2(pts[i], cents[lab[i]], sc);
-    return s;
-  }
-  function kpp(k, sc, r) {
-    const cents = [Object.assign({}, pts[Math.floor(r() * pts.length)])];
-    while (cents.length < k) {
-      const ds = pts.map((p) => Math.min(...cents.map((c) => d2(p, c, sc))));
-      let u = r() * ds.reduce((a, b) => a + b, 0), i = 0;
-      while (u > ds[i] && i < ds.length - 1) u -= ds[i++];
-      cents.push({ x: pts[i].x, y: pts[i].y });
-    }
-    return cents;
-  }
-  function run(cents, sc) {
-    let lab = assignAll(cents, sc);
-    for (let it = 0; it < 100; it++) {
-      cents = centroids(lab, cents);
-      const nl = assignAll(cents, sc);
-      if (nl.every((v, i) => v === lab[i])) break;
-      lab = nl;
-    }
-    return { cents, lab, inertia: inertia(lab, cents, sc) };
-  }
-  // Relabel clusters by mean age so a cluster keeps its color as k or units change.
-  function ordered(res) {
-    const order = res.cents.map((c, k) => k).sort((a, b) => res.cents[a].x - res.cents[b].x || res.cents[a].y - res.cents[b].y);
-    const inv = [];
-    order.forEach((k, i) => { inv[k] = i; });
-    return { cents: order.map((k) => res.cents[k]), lab: res.lab.map((l) => inv[l]), inertia: res.inertia };
-  }
-  function bestOf(k, sc, runs, seed) {
-    const r = ML.rng(seed);
-    let best = null;
-    for (let i = 0; i < runs; i++) {
-      const res = run(kpp(k, sc, r), sc);
-      if (!best || res.inertia < best.inertia) best = res;
-    }
-    return ordered(best);
-  }
-  function silhouette(lab, k, sc) {
-    if (k < 2) return NaN;
-    let total = 0;
-    for (let i = 0; i < pts.length; i++) {
-      const sum = new Array(k).fill(0), cnt = new Array(k).fill(0);
-      for (let j = 0; j < pts.length; j++) {
-        if (i === j) continue;
-        sum[lab[j]] += Math.sqrt(d2(pts[i], pts[j], sc));
-        cnt[lab[j]]++;
-      }
-      const a = cnt[lab[i]] ? sum[lab[i]] / cnt[lab[i]] : 0;
-      let b = Infinity;
-      for (let c = 0; c < k; c++) if (c !== lab[i] && cnt[c]) b = Math.min(b, sum[c] / cnt[c]);
-      total += cnt[lab[i]] ? (b - a) / Math.max(a, b) : 0;
-    }
-    return total / pts.length;
-  }
 
   // ---------- drawing ----------
 
@@ -120,7 +22,7 @@
     const c = p.ctx, cell = 5;
     for (let px = p.m.l; px < p.m.l + p.iw; px += cell) {
       for (let py = p.m.t; py < p.m.t + p.ih; py += cell) {
-        const k = nearest({ x: p.ix(px + cell / 2), y: p.iy(py + cell / 2) }, cents, sc);
+        const k = KM.nearest({ x: p.ix(px + cell / 2), y: p.iy(py + cell / 2) }, cents, sc);
         c.fillStyle = ML.rgba(ML.series(k), 0.13);
         c.fillRect(px, py, cell, cell);
       }
@@ -157,7 +59,7 @@
   // ---------- steps 1 & 2: place and iterate ----------
 
   const K = { placed: [], cents: [], lab: null, phase: 'assign', trails: [], hist: [], running: 0, drag: -1, converged: false };
-  const liveLab = () => (K.placed.length ? assignAll(K.placed, STD) : null);
+  const liveLab = () => (K.placed.length ? KM.assign(pts, K.placed, STD) : null);
 
   const pPlace = scatter('km-place', { drag: true });
   pPlace.draw = (c, p) => {
@@ -198,7 +100,7 @@
     ptTip(pPlace, e, liveLab());
   });
   pPlace.on('up', () => { K.drag = -1; pPlace.update(); });
-  ML.btn('km-rand', () => { K.placed = kpp(4, STD, ML.rng(Date.now() & 0xffff)).map((q) => ({ x: q.x, y: q.y })); placedChanged(); });
+  ML.btn('km-rand', () => { K.placed = KM.kpp(pts, 4, STD, ML.rng(Date.now() & 0xffff)).map((q) => ({ x: q.x, y: q.y })); placedChanged(); });
   ML.btn('km-undo', () => { K.placed.pop(); placedChanged(); });
   ML.btn('km-clear', () => { K.placed = []; placedChanged(); });
 
@@ -209,7 +111,7 @@
   function placedRender() {
     const lab = liveLab();
     text('km-k', K.placed.length);
-    text('km-inertia', lab ? fmt(inertia(lab, K.placed, STD), 1) : '–');
+    text('km-inertia', lab ? fmt(KM.inertia(pts, lab, K.placed, STD), 1) : '–');
     id('km-undo').disabled = !K.placed.length;
     id('km-clear').disabled = !K.placed.length;
     pPlace.update();
@@ -227,17 +129,17 @@
     iterChanged();
   }
   function doAssign() {
-    const nl = assignAll(K.cents, STD);
+    const nl = KM.assign(pts, K.cents, STD);
     const same = K.lab && nl.every((v, i) => v === K.lab[i]);
     K.lab = nl;
-    K.hist.push(inertia(K.lab, K.cents, STD));
+    K.hist.push(KM.inertia(pts, K.lab, K.cents, STD));
     if (same) K.converged = true;
     K.phase = 'move';
   }
   function doMove() {
-    K.cents = centroids(K.lab, K.cents);
+    K.cents = KM.centroids(pts, K.lab, K.cents);
     K.cents.forEach((q, k) => K.trails[k].push(q));
-    K.hist.push(inertia(K.lab, K.cents, STD));
+    K.hist.push(KM.inertia(pts, K.lab, K.cents, STD));
     K.phase = 'assign';
   }
   function stopRun() { clearInterval(K.running); K.running = 0; id('km-run').textContent = 'Run'; }
@@ -253,13 +155,12 @@
       iterChanged();
     }, 420);
   });
-  ML.btn('km-restart', () => iterStart(K.placed.length >= 2 ? K.placed : kpp(4, STD, ML.rng(3)), ''));
-  // A start that lands in a poor local minimum: one group ends up split, two others merged.
-  ML.btn('km-bad', () => iterStart([{ x: 25, y: 9.1 }, { x: 51, y: 12.4 }, { x: 54, y: 11.2 }, { x: 42, y: 10 }], 'bad'));
+  ML.btn('km-restart', () => iterStart(K.placed.length >= 2 ? K.placed : KM.kpp(pts, 4, STD, ML.rng(3)), ''));
+  ML.btn('km-bad', () => iterStart(KM.BAD_START, 'bad'));
   let ppSeed = 7;
-  ML.btn('km-pp', () => iterStart(kpp(Math.max(2, K.cents.length || 4), STD, ML.rng(ppSeed++)), 'pp'));
+  ML.btn('km-pp', () => iterStart(KM.kpp(pts, Math.max(2, K.cents.length || 4), STD, ML.rng(ppSeed++)), 'pp'));
 
-  const best4 = bestOf(4, STD, 10, 99);
+  const best4 = KM.bestOf(pts, 4, STD, 10, 99);
   const pIter = scatter('km-iter');
   pIter.draw = (c, p) => {
     p.axes();
@@ -317,8 +218,8 @@
     if (sweep) return;
     sweep = [];
     for (let k = 1; k <= MAXK; k++) {
-      const res = bestOf(k, STD, 10, 100 + k);
-      sweep.push({ k, res, inertia: res.inertia, sil: silhouette(res.lab, k, STD) });
+      const res = KM.bestOf(pts, k, STD, 10, 100 + k);
+      sweep.push({ k, res, inertia: res.inertia, sil: KM.silhouette(pts, res.lab, k, STD) });
     }
   }
   const kPlot = (host, key, yLabel, yd) => {
@@ -399,18 +300,6 @@
   const unitsSeg = ML.seg('km-units', (v) => { S4.units = v; unitsChanged(); });
   id('km-truth').addEventListener('change', (e) => { S4.truth = e.target.checked; unitsChanged(); });
 
-  function agreement(lab) {
-    // Best one-to-one matching of 4 clusters to 4 true groups (24 permutations).
-    const perms = [];
-    (function permute(a, l) { if (l === a.length) { perms.push(a.slice()); return; } for (let i = l; i < a.length; i++) { [a[l], a[i]] = [a[i], a[l]]; permute(a, l + 1); [a[l], a[i]] = [a[i], a[l]]; } })([0, 1, 2, 3], 0);
-    let best = 0;
-    for (const pm of perms) {
-      let ok = 0;
-      for (let i = 0; i < pts.length; i++) if (pm[lab[i]] === pts[i].g) ok++;
-      best = Math.max(best, ok);
-    }
-    return best / pts.length;
-  }
   function ellipses(p) {
     const c = p.ctx;
     GROUPS.forEach((g) => {
@@ -446,8 +335,8 @@
 
   function unitsChanged() {
     const sc = S4.units === 'raw' ? RAW : STD;
-    S4.res = cache4[S4.units] || (cache4[S4.units] = bestOf(4, sc, 10, 400));
-    text('km-agree', ML.pct(agreement(S4.res.lab)));
+    S4.res = cache4[S4.units] || (cache4[S4.units] = KM.bestOf(pts, 4, sc, 10, 400));
+    text('km-agree', ML.pct(KM.agreement(pts, S4.res.lab)));
     text('km-unit-age', fmt(1 / sc[0]));
     text('km-unit-a1c', fmt(1 / sc[1]));
     text('km-scale-legend', S4.truth
@@ -464,7 +353,7 @@
       if (step === 1) {
         if (K.stale || !K.cents.length) {
           K.stale = false;
-          iterStart(K.placed.length >= 2 ? K.placed : kpp(4, STD, ML.rng(3)), K.placed.length >= 2 ? '' : 'auto');
+          iterStart(K.placed.length >= 2 ? K.placed : KM.kpp(pts, 4, STD, ML.rng(3)), K.placed.length >= 2 ? '' : 'auto');
         } else iterChanged();
       }
       if (step === 2) kChanged();
