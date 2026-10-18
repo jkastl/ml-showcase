@@ -7,6 +7,26 @@
   <meta name="theme-color" content="#121212">
   <title>ML Showcase</title>
   <meta name="description" content="Machine learning, step by step, on simulated clinical problems. Four models trained live in your browser.">
+  <link rel="canonical" href="https://jkastl.github.io/ml-showcase/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Apps and demos">
+  <meta property="og:title" content="ML Showcase">
+  <meta property="og:description" content="Machine learning, step by step, on simulated clinical problems. Four models trained live in your browser.">
+  <meta property="og:url" content="https://jkastl.github.io/ml-showcase/">
+  <meta name="twitter:card" content="summary">
+  <script id="visit-count">
+    // Anonymous visit count (GoatCounter, no cookies). Does nothing off github.io.
+    (function () {
+      if (!/\.github\.io$/.test(location.hostname)) return;
+      var s = document.createElement("script");
+      s.async = true;
+      s.src = "https://gc.zgo.at/count.v4.js";
+      s.integrity = "sha384-nRw6qfbWyJha9LhsOtSb2YJDyZdKvvCFh0fJYlkquSFjUxp9FVNugbfy8q1jdxI+";
+      s.crossOrigin = "anonymous";
+      s.setAttribute("data-goatcounter", "https://jkastl.goatcounter.com/count");
+      document.head.appendChild(s);
+    })();
+  </script>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23121212'/%3E%3Cpath d='M3 18h7l3-9 4 16 3-10 2 3h7' fill='none' stroke='%237aa7ff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -72,8 +92,9 @@
           <p class="tech">External validation · fairness · drift · reporting</p>
         </li>
       </ul>
-      <p class="disclaimer">Every patient on this site is simulated with a few lines of code. Nothing is sent
-        anywhere: the data, the training and the predictions all run inside this page. It's a teaching tool, not
+      <p class="disclaimer">Every patient on this site is simulated with a few lines of code. None of it is sent
+        anywhere: the data, the training and the predictions all run inside this page, which only records an
+        anonymous visit count. It's a teaching tool, not
         a clinical one.</p>
     </section>
 
@@ -913,7 +934,7 @@
   <footer class="site">
     Simulated data only. Runs entirely in your browser. Not for clinical use.
     · <a href="/">All apps</a>
-    · <a href="https://github.com/jkastl/ml-showcase">Source</a> · v1.3.1 · 2026-10-13
+    · <a href="https://github.com/jkastl/ml-showcase">Source</a> · v1.3.2 · 2026-10-18
   </footer>
 
   <script src="js/engine/stats.js"></script>
