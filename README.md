@@ -17,8 +17,8 @@ the browser, and every step has something to drag, click or switch.
 A wrap-up page ties each chapter to what it takes to deploy a clinical model responsibly.
 
 All patients and heartbeats are generated in the page by seeded formulas, so every visit sees the
-same data. Nothing is fetched, and none of it is sent anywhere; the page only records an anonymous
-visit count ([GoatCounter](https://www.goatcounter.com/), no cookies). It's a teaching tool, not a clinical one.
+same data. Nothing is fetched, and none of it is sent anywhere: there's no backend. The page loads an
+anonymous [GoatCounter](https://www.goatcounter.com/) visit counter (no cookies) and works without it. It's a teaching tool, not a clinical one.
 
 ## Running it
 
